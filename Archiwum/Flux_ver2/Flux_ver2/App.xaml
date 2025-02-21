@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:styles="clr-namespace:Flux_ver2.Resources.Styles"
+             x:Class="Flux_ver2.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <styles:FillColorConverter x:Key="FillColorConverter" />
+            <styles:PercentageToGridLengthConverter x:Key="PercentageToGridLengthConverter" />
+            <styles:ComplementaryPercentageToGridLengthConverter x:Key="ComplementaryPercentageToGridLengthConverter" />
+
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

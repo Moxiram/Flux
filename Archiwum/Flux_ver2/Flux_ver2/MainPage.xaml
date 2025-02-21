@@ -1,0 +1,198 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Flux_ver2.MainPage">
+
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <!-- Top Bar -->
+            <RowDefinition Height="Auto" />
+            <!-- Navigation Bar -->
+            <RowDefinition Height="*" />
+            <!-- miejsce dla ScrollView -->
+        </Grid.RowDefinitions>
+
+        <!-- Top Bar with User Info -->
+        <Grid BackgroundColor="Black" Padding="10" Grid.Row="0">
+            <Label Text="Logistics Management"
+                   HorizontalOptions="Start"
+                   VerticalOptions="Center"
+                   FontSize="20"
+                   FontAttributes="Bold"
+                   TextColor="White" />
+            <Label Text="Chris"
+                   HorizontalOptions="End"
+                   VerticalOptions="Center"
+                   FontSize="16"
+                   TextColor="White" />
+        </Grid>
+
+        <!-- Navigation Bar -->
+        <HorizontalStackLayout BackgroundColor="Gray"
+                               Padding="10"
+                               Spacing="15"
+                               HorizontalOptions="Center"
+                               Grid.Row="1">
+            <Button Text="Homepage" TextColor="White" BackgroundColor="Transparent" />
+            <Button Text="Booking" TextColor="White" BackgroundColor="Transparent" />
+            <Button Text="Dispatch" TextColor="White" BackgroundColor="Transparent" />
+            <Button Text="Delivery/Receives" TextColor="White" BackgroundColor="Transparent" />
+            <Button Text="Run Sheet" TextColor="White" BackgroundColor="Transparent" />
+            <Button Text="Warehouse" TextColor="White" BackgroundColor="Transparent" />
+            <Button Text="Truck Details" TextColor="White" BackgroundColor="Transparent" />
+        </HorizontalStackLayout>
+
+        <!-- Main Panel w ScrollView -->
+        <ScrollView Grid.Row="2">
+            <VerticalStackLayout Padding="20" BackgroundColor="Black" Spacing="20">
+                <!-- Tracking Section -->
+                <Border Stroke="#3d3d3d" StrokeThickness="1" BackgroundColor="#2d2d2d" Padding="15">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="10" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout>
+                        <HorizontalStackLayout Spacing="10">
+                            <Label Text="Track:" FontAttributes="Bold" FontSize="18" TextColor="White" VerticalOptions="Center" />
+                            <CheckBox IsChecked="False" VerticalOptions="Center" />
+                            <Label Text="Product" TextColor="White" VerticalOptions="Center" />
+                            <CheckBox IsChecked="False" VerticalOptions="Center" />
+                            <Label Text="Delivery" TextColor="White" VerticalOptions="Center" />
+                            <CheckBox IsChecked="False" VerticalOptions="Center" />
+                            <Label Text="Warehouse" TextColor="White" VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                        <Grid ColumnSpacing="10" Padding="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="3*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Entry Placeholder="Enter tracking ID" Grid.Column="0" VerticalOptions="Center" />
+                            <Button Text="Search" BackgroundColor="Green" TextColor="White" Grid.Column="1" VerticalOptions="Center" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Warehouse Overview Section -->
+                <Border Stroke="#3d3d3d" StrokeThickness="1" BackgroundColor="#2d2d2d" Padding="15">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="10" />
+                    </Border.StrokeShape>
+                    <VerticalStackLayout>
+                        <Label Text="Warehouse Overview" FontAttributes="Bold" FontSize="18" TextColor="White" />
+                        <CollectionView ItemsSource="{Binding Warehouses}" Margin="0,10">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Stroke="#3d3d3d" StrokeThickness="1" BackgroundColor="#3d3d3d" Padding="10" Margin="5">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="10" />
+                                        </Border.StrokeShape>
+                                        <VerticalStackLayout>
+                                            <Label Text="{Binding Name}" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
+                                            <Grid HeightRequest="20" ColumnSpacing="0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="{Binding FillPercentage, Converter={StaticResource PercentageToGridLengthConverter}}" />
+                                                    <ColumnDefinition Width="{Binding FillPercentage, Converter={StaticResource ComplementaryPercentageToGridLengthConverter}}" />
+                                                </Grid.ColumnDefinitions>
+                                                <BoxView Grid.Column="0" BackgroundColor="{Binding FillPercentage, Converter={StaticResource FillColorConverter}}" />
+                                                <BoxView Grid.Column="1" BackgroundColor="Gray" />
+                                            </Grid>
+                                            <Label Text="{Binding DisplayFillPercentage}" TextColor="White" HorizontalOptions="Center" />
+                                        </VerticalStackLayout>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Statistics Section -->
+                <Grid Padding="20" RowSpacing="25" ColumnSpacing="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Statistics Tiles - First Row -->
+                    <Border Stroke="#2d2d2d" StrokeThickness="1" BackgroundColor="#2d2d2d" Padding="10" Grid.Column="0" Grid.Row="0" Margin="5">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="10" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout>
+                            <Label Text="Total Orders" FontAttributes="Bold" HorizontalOptions="Center" TextColor="White" />
+                            <Label Text="10" FontSize="24" HorizontalOptions="Center" TextColor="White" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Border Stroke="#2d2d2d" StrokeThickness="1" BackgroundColor="#2d2d2d" Padding="10" Grid.Column="1" Grid.Row="0" Margin="5">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="10" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout>
+                            <Label Text="Total Earnings" FontAttributes="Bold" HorizontalOptions="Center" TextColor="White" />
+                            <Label Text="$2700.0" FontSize="24" HorizontalOptions="Center" TextColor="White" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Border Stroke="#2d2d2d" StrokeThickness="1" BackgroundColor="#2d2d2d" Padding="10" Grid.Column="2" Grid.Row="0" Margin="5">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="10" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout>
+                            <Label Text="Pending Orders" FontAttributes="Bold" HorizontalOptions="Center" TextColor="White" />
+                            <Label Text="6" FontSize="24" HorizontalOptions="Center" TextColor="White" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Border Stroke="#2d2d2d" StrokeThickness="1" BackgroundColor="#2d2d2d" Padding="10" Grid.Column="3" Grid.Row="0" Margin="5">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="10" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout>
+                            <Label Text="In-Transit Orders" FontAttributes="Bold" HorizontalOptions="Center" TextColor="White" />
+                            <Label Text="2" FontSize="24" HorizontalOptions="Center" TextColor="White" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Statistics Tiles - Second Row -->
+                    <Border Stroke="#2d2d2d" StrokeThickness="1" BackgroundColor="#2d2d2d" Padding="10" Grid.Column="0" Grid.Row="1" Margin="5">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="10" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout>
+                            <Label Text="Returned Orders" FontAttributes="Bold" HorizontalOptions="Center" TextColor="White" />
+                            <Label Text="2" FontSize="24" HorizontalOptions="Center" TextColor="White" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Border Stroke="#2d2d2d" StrokeThickness="1" BackgroundColor="#2d2d2d" Padding="10" Grid.Column="1" Grid.Row="1" Margin="5">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="10" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout>
+                            <Label Text="Delivered Orders" FontAttributes="Bold" HorizontalOptions="Center" TextColor="White" />
+                            <Label Text="4" FontSize="24" HorizontalOptions="Center" TextColor="White" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Border Stroke="#2d2d2d" StrokeThickness="1" BackgroundColor="#2d2d2d" Padding="10" Grid.Column="2" Grid.Row="1" Margin="5">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="10" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout>
+                            <Label Text="Alerts" FontAttributes="Bold" HorizontalOptions="Center" TextColor="White" />
+                            <Label Text="1" FontSize="24" HorizontalOptions="Center" TextColor="White" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                </Grid>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>
