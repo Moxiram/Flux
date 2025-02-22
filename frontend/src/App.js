@@ -43,7 +43,7 @@ function Home() {
                         <h3>Zamówienie #{order.id}</h3>
                         <p>Produkt: {order.product.name}</p>
                         <p>Ilość: {order.quantity}</p>
-                        <p>Data zamówienia: {order.order_date}</p>
+                       
                         <p>Termin realizacji: {order.order_deadline}</p>
                         <button className="btn">Szczegóły</button>
                     </div>

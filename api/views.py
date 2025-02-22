@@ -13,4 +13,3 @@ class WarehouseViewSet(viewsets.ModelViewSet):
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-# Compare this snippet from api/urls.py:

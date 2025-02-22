@@ -6,7 +6,6 @@ function AddOrder() {
     const [products, setProducts] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState('');
     const [quantity, setQuantity] = useState('');
-    const [orderDate, setOrderDate] = useState('');
     const [orderDeadline, setOrderDeadline] = useState('');
     const navigate = useNavigate();
 
@@ -18,19 +17,27 @@ function AddOrder() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+    
+        const newOrder = {
+            product_id: parseInt(selectedProduct, 10), // Tylko ID produktu
+            quantity: quantity.toString(), // Zamiana liczby na tekst
+            order_deadline: orderDeadline  // Data w formacie "YYYY-MM-DD"
+        };
+    
         try {
-            const newOrder = {
-                product: selectedProduct,
-                quantity,
-                order_date: orderDate,
-                order_deadline: orderDeadline
-            };
-            
-            await axios.post('http://127.0.0.1:8000/api/orders/', newOrder);
+            await axios.post('http://127.0.0.1:8000/api/orders/', newOrder, {
+                headers: { 'Content-Type': 'application/json' }
+            });
             alert("Zamówienie zostało dodane!");
             navigate('/');
         } catch (error) {
-            console.error("Błąd podczas dodawania zamówienia!", error);
+            if (error.response) {
+                console.error("Błąd podczas dodawania zamówienia!", error.response.data);
+                alert(`Błąd: ${JSON.stringify(error.response.data)}`);
+            } else {
+                console.error("Nieznany błąd:", error);
+                alert("Wystąpił nieznany błąd.");
+            }
         }
     };
 
@@ -48,9 +55,6 @@ function AddOrder() {
 
                 <label>Ilość:</label>
                 <input type="text" value={quantity} onChange={e => setQuantity(e.target.value)} required />
-
-                <label>Data zamówienia:</label>
-                <input type="date" value={orderDate} onChange={e => setOrderDate(e.target.value)} required />
 
                 <label>Termin realizacji:</label>
                 <input type="date" value={orderDeadline} onChange={e => setOrderDeadline(e.target.value)} required />
