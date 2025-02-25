@@ -7,7 +7,8 @@ class Item(models.Model):
 
     def __str__(self):
         return self.name
-    
+
+
 class Warehouse(models.Model):
     name = models.CharField(max_length=255, unique=True)  # Nazwa magazynu
     location = models.CharField(max_length=255)  # Lokalizacja magazynu
@@ -18,12 +19,6 @@ class Warehouse(models.Model):
 
 
 class Product(models.Model):
-    STATUS_CHOICES = [
-        ('to_produce', 'Do produkcji'),
-        ('ready', 'Gotowy do wysyłki'),
-        ('shipped', 'Wysłany'),
-    ]
-
     name = models.CharField(max_length=255)  # Nazwa produktu
     quantity = models.CharField(max_length=50)  # Ilość (np. "10kg", "12 litrów")
     type = models.CharField(max_length=100, blank=True, null=True)  # Typ produktu (opcjonalnie)
@@ -34,18 +29,24 @@ class Product(models.Model):
         blank=True, 
         related_name="products"
     )  # Magazyn (może być NULL)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='to_produce')
     note = models.TextField(blank=True, null=True)  # Opcjonalne notatki dotyczące produktu
 
     def __str__(self):
-        return f"{self.name} ({self.quantity}) - {self.get_status_display()}"
+        return f"{self.name} ({self.quantity})"
 
 
 class Order(models.Model):
+    STATUS_CHOICES = [
+        ('to_produce', 'Do produkcji'),
+        ('ready', 'Gotowy do wysyłki'),
+        ('shipped', 'Wysłany'),
+    ]
+
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="orders")  # Powiązanie z produktem
     quantity = models.CharField(max_length=50)  # Ilość (np. "10kg", "20 litrów")
     order_date = models.DateTimeField(auto_now_add=True)  # Data utworzenia zamówienia
     order_deadline = models.DateField()  # Termin wysyłki
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='to_produce')  # ✅ Przeniesione z `Product`
 
     def is_overdue(self):
         """Sprawdza, czy zamówienie jest przeterminowane."""
@@ -53,5 +54,6 @@ class Order(models.Model):
         return self.order_deadline < now().date()
 
     def __str__(self):
-        status = "✅ W terminie" if not self.is_overdue() else "❌ Przeterminowane"
-        return f"Zamówienie na {self.product.name} ({self.quantity}) - Termin: {self.order_deadline} - {status}"
+        status_label = dict(self.STATUS_CHOICES).get(self.status, "Nieznany status")
+        overdue_status = "✅ W terminie" if not self.is_overdue() else "❌ Przeterminowane"
+        return f"Zamówienie na {self.product.name} ({self.quantity}) - {status_label} - Termin: {self.order_deadline} - {overdue_status}"

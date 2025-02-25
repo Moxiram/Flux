@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import About from './pages/Test1';
 import AddOrder from './pages/add_order';
 import AddProduct from './pages/add_product';
+import AddWarehouse from './pages/add_warehause';
 import './App.css';
 
 function Home() {
@@ -91,7 +92,7 @@ function App() {
     return (
         <Router>
             <header className="navbar">
-                <span className="user-name">Użytkownik: Jan Kowalski</span>
+                <span className="user-name">Włodzimierz Szaranowicz</span>
                 <nav className="nav-links">
                     <Link to="/">Strona główna</Link>
                     <Link to="/about">O nas</Link>
@@ -103,7 +104,7 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/add-order" element={<AddOrder/>} />
-                <Route path="/add-warehouse" element={<div>Formularz dodawania magazynu</div>} />
+                <Route path="/add-warehouse" element={<AddWarehouse/>} />
                 <Route path="/add-product" element={<AddProduct/>} />
             </Routes>
         </Router>
