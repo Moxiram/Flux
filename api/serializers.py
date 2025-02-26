@@ -14,7 +14,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'quantity', 'type', 'warehouse', 'warehouse_id', 'status', 'note']
+        fields = ['id', 'name', 'quantity', 'type', 'warehouse', 'warehouse_id', 'note']
 
 class OrderSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)  # Pobiera pełne dane produktu
@@ -24,4 +24,4 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'product', 'product_id', 'quantity', 'order_date', 'order_deadline']
+        fields = ['id', 'product', 'product_id', 'quantity', 'order_date', 'order_deadline', 'status']
