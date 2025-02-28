@@ -4,22 +4,31 @@ function OrderModal({ isOpen, onClose, onSave, initialData, products }) {
     const [selectedProduct, setSelectedProduct] = useState('');
     const [quantity, setQuantity] = useState('');
     const [orderDeadline, setOrderDeadline] = useState('');
+    const [note, setNote] = useState(''); // Dodano obsługę notatek
 
     useEffect(() => {
         if (initialData) {
             setSelectedProduct(initialData.product?.id || '');
             setQuantity(initialData.quantity || '');
-            setOrderDeadline(initialData.order_deadline || '');
+            setOrderDeadline(initialData.order_deadline || '');  // Upewnij się, że wartość jest w formacie YYYY-MM-DD
+            setNote(initialData.note || ''); // Wczytanie notatek jeśli istnieją
         }
     }, [initialData]);
 
+
     const handleSubmit = (e) => {
         e.preventDefault();
+
+        const formattedOrderDeadline = orderDeadline ? new Date(orderDeadline).toISOString().split("T")[0] : "";
+
         const orderData = {
             product_id: selectedProduct,
             quantity,
-            orderDeadline
+            order_deadline: formattedOrderDeadline  // Poprawna nazwa pola!
         };
+
+        console.log("Dane do wysłania:", orderData);  // Sprawdzenie poprawności danych przed wysłaniem
+
         onSave(orderData);
     };
 
@@ -43,6 +52,9 @@ function OrderModal({ isOpen, onClose, onSave, initialData, products }) {
 
                     <label>Termin realizacji:</label>
                     <input type="date" value={orderDeadline} onChange={(e) => setOrderDeadline(e.target.value)} required />
+
+                    <label>Notatki:</label>
+                    <textarea value={note} onChange={(e) => setNote(e.target.value)} />
 
                     <button type="submit">Zapisz</button>
                     <button type="button" onClick={onClose}>Anuluj</button>

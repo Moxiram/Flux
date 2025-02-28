@@ -47,10 +47,10 @@ class Order(models.Model):
     order_date = models.DateTimeField(auto_now_add=True)  # Data utworzenia zamówienia
     order_deadline = models.DateField()  # Termin wysyłki
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='to_produce')  # ✅ Przeniesione z `Product`
+    note = models.TextField(blank=True, null=True)  # ✅ Nowe pole na notatki o zamówieniu
 
     def is_overdue(self):
         """Sprawdza, czy zamówienie jest przeterminowane."""
-        from django.utils.timezone import now
         return self.order_deadline < now().date()
 
     def __str__(self):

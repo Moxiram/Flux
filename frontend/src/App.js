@@ -18,62 +18,52 @@ function Home() {
     const [editingWarehouse, setEditingWarehouse] = useState(null);
     const [editingOrder, setEditingOrder] = useState(null);
 
-    useEffect(() => {
+    const fetchOrders = () => {
         axios.get('http://127.0.0.1:8000/api/orders/')
             .then(response => setOrders(response.data))
             .catch(error => console.error("Błąd podczas pobierania zamówień!", error));
+    };
 
+    const fetchWarehouses = () => {
         axios.get('http://127.0.0.1:8000/api/warehouses/')
             .then(response => setWarehouses(response.data))
             .catch(error => console.error("Błąd podczas pobierania magazynów!", error));
+    };
 
+    const fetchProducts = () => {
         axios.get('http://127.0.0.1:8000/api/products/')
             .then(response => setProducts(response.data))
             .catch(error => console.error("Błąd podczas pobierania produktów!", error));
+    };
+
+    useEffect(() => {
+        fetchOrders();
+        fetchWarehouses();
+        fetchProducts();
     }, []);
 
-    const openProductModal = (product = null) => {
-        setEditingProduct(product);
-        setIsProductModalOpen(true);
+    const openModal = (setModalOpen, setEditingItem, item = null) => {
+        setEditingItem(item);
+        setModalOpen(true);
     };
 
-    const closeProductModal = () => {
-        setIsProductModalOpen(false);
-        setEditingProduct(null);
+    const closeModal = (setModalOpen, setEditingItem) => {
+        setModalOpen(false);
+        setEditingItem(null);
     };
 
-    const openWarehouseModal = (warehouse = null) => {
-        setEditingWarehouse(warehouse);
-        setIsWarehouseModalOpen(true);
-    };
-
-    const closeWarehouseModal = () => {
-        setIsWarehouseModalOpen(false);
-        setEditingWarehouse(null);
-    };
-
-    const openOrderModal = (order = null) => {
-        setEditingOrder(order);
-        setIsOrderModalOpen(true);
-    };
-
-    const closeOrderModal = () => {
-        setIsOrderModalOpen(false);
-        setEditingOrder(null);
-    };
-
-    const handleSaveProduct = async (productData) => {
+    const handleSave = async (apiUrl, itemData, fetchFunction, closeModalFunction) => {
         try {
-            if (editingProduct) {
-                await axios.put(`http://127.0.0.1:8000/api/products/${editingProduct.id}/`, productData);
+            if (itemData.id) {
+                await axios.put(`${apiUrl}${itemData.id}/`, itemData);
             } else {
-                await axios.post('http://127.0.0.1:8000/api/products/', productData);
+                await axios.post(apiUrl, itemData);
             }
-            alert("Produkt zapisany!");
-            closeProductModal();
-            window.location.reload();
+            alert("Dane zapisane!");
+            fetchFunction();
+            closeModalFunction();
         } catch (error) {
-            console.error("Błąd podczas zapisywania produktu!", error.response?.data || error);
+            console.error("Błąd podczas zapisywania!", error.response?.data || error);
         }
     };
 
@@ -83,7 +73,7 @@ function Home() {
             
             <div className="section-header">
                 <h2>Lista Zamówień</h2>
-                <button className="btn" onClick={() => openOrderModal()}>Dodaj zamówienie</button>
+                <button className="btn" onClick={() => openModal(setIsOrderModalOpen, setEditingOrder)}>Dodaj zamówienie</button>
             </div>
             {orders.map(order => (
                 <div key={order.id} className="order-card">
@@ -92,24 +82,26 @@ function Home() {
                     <p>Ilość: {order.quantity}</p>
                     <p>Status: {order.status}</p>
                     <p>Termin realizacji: {order.order_deadline}</p>
+                    <button className="btn-edit" onClick={() => openModal(setIsOrderModalOpen, setEditingOrder, order)}>Edytuj</button>
                 </div>
             ))}
 
             <div className="section-header">
                 <h2>Magazyny</h2>
-                <button className="btn" onClick={() => openWarehouseModal()}>Dodaj magazyn</button>
+                <button className="btn" onClick={() => openModal(setIsWarehouseModalOpen, setEditingWarehouse)}>Dodaj magazyn</button>
             </div>
             {warehouses.map(warehouse => (
                 <div key={warehouse.id} className="warehouse-item">
                     <h3>{warehouse.name}</h3>
                     <p>Lokalizacja: {warehouse.location}</p>
                     <p>Notatka: {warehouse.note}</p>
+                    <button className="btn-edit" onClick={() => openModal(setIsWarehouseModalOpen, setEditingWarehouse, warehouse)}>Edytuj</button>
                 </div>
             ))}
 
             <div className="section-header">
                 <h2>Produkty</h2>
-                <button className="btn" onClick={() => openProductModal()}>Dodaj produkt</button>
+                <button className="btn" onClick={() => openModal(setIsProductModalOpen, setEditingProduct)}>Dodaj produkt</button>
             </div>
             {products.map(product => (
                 <div key={product.id} className="product-card">
@@ -118,35 +110,15 @@ function Home() {
                     <p>Typ: {product.type || 'Brak'}</p>
                     <p>Magazyn: {product.warehouse ? product.warehouse.name : 'Brak'}</p>
                     <p>Notatki: {product.note || 'Brak'}</p>
-                    <button className="btn-edit" onClick={() => openProductModal(product)}>Edytuj</button>
+                    <button className="btn-edit" onClick={() => openModal(setIsProductModalOpen, setEditingProduct, product)}>Edytuj</button>
                 </div>
             ))}
 
-            <ProductModal isOpen={isProductModalOpen} onClose={closeProductModal} onSave={handleSaveProduct} initialData={editingProduct} warehouses={warehouses} />
-            <WarehouseModal isOpen={isWarehouseModalOpen} onClose={closeWarehouseModal} onSave={() => {}} initialData={editingWarehouse} />
-            <OrderModal isOpen={isOrderModalOpen} onClose={closeOrderModal} onSave={() => {}} initialData={editingOrder} products={products} />
+            <ProductModal isOpen={isProductModalOpen} onClose={() => closeModal(setIsProductModalOpen, setEditingProduct)} onSave={(data) => handleSave('http://127.0.0.1:8000/api/products/', data, fetchProducts, () => closeModal(setIsProductModalOpen, setEditingProduct))} initialData={editingProduct} warehouses={warehouses} />
+            <WarehouseModal isOpen={isWarehouseModalOpen} onClose={() => closeModal(setIsWarehouseModalOpen, setEditingWarehouse)} onSave={(data) => handleSave('http://127.0.0.1:8000/api/warehouses/', data, fetchWarehouses, () => closeModal(setIsWarehouseModalOpen, setEditingWarehouse))} initialData={editingWarehouse} />
+            <OrderModal isOpen={isOrderModalOpen} onClose={() => closeModal(setIsOrderModalOpen, setEditingOrder)} onSave={(data) => handleSave('http://127.0.0.1:8000/api/orders/', data, fetchOrders, () => closeModal(setIsOrderModalOpen, setEditingOrder))} initialData={editingOrder} products={products} />
         </div>
     );
 }
 
-function App() {
-    return (
-        <Router>
-            <header className="navbar">
-                <span className="user-name">Włodzimierz Szaranowicz</span>
-                <nav className="nav-links">
-                    <Link to="/">Strona główna</Link>
-                    <Link to="/about">O nas</Link>
-                </nav>
-                <button className="logout-btn">Wyloguj</button>
-            </header>
-
-            <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/about" element={<About />} />
-            </Routes>
-        </Router>
-    );
-}
-
-export default App;
+export default Home;
