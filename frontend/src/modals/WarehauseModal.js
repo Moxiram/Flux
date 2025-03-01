@@ -16,10 +16,13 @@ function WarehouseModal({ isOpen, onClose, onSave, initialData }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         const warehouseData = {
+            id: initialData?.id || null,  // Kluczowe dla edycji
             name,
             location,
             note
         };
+
+        console.log("Wysyłane dane magazynu:", warehouseData); // Sprawdzenie danych w konsoli
         onSave(warehouseData);
     };
 

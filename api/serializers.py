@@ -17,10 +17,13 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'quantity', 'type', 'warehouse', 'warehouse_id', 'note']
 
 class OrderSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)  # Pobiera pełne dane produktu
     product_id = serializers.PrimaryKeyRelatedField(
         queryset=Product.objects.all(), source='product', write_only=True
-    )
+    )  # Pozwala na zapis ID produktu
+    order_deadline = serializers.DateField()  # To jest wymagane!
 
     class Meta:
         model = Order
         fields = ['id', 'product', 'product_id', 'quantity', 'order_date', 'order_deadline', 'status', 'note']
+

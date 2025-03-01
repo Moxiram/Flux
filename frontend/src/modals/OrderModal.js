@@ -4,30 +4,29 @@ function OrderModal({ isOpen, onClose, onSave, initialData, products }) {
     const [selectedProduct, setSelectedProduct] = useState('');
     const [quantity, setQuantity] = useState('');
     const [orderDeadline, setOrderDeadline] = useState('');
-    const [note, setNote] = useState(''); // Dodano obsługę notatek
+    const [note, setNote] = useState('');
+    const [status, setStatus] = useState('to_produce');
 
     useEffect(() => {
         if (initialData) {
             setSelectedProduct(initialData.product?.id || '');
             setQuantity(initialData.quantity || '');
-            setOrderDeadline(initialData.order_deadline || '');  // Upewnij się, że wartość jest w formacie YYYY-MM-DD
-            setNote(initialData.note || ''); // Wczytanie notatek jeśli istnieją
+            setOrderDeadline(initialData.order_deadline || '');
+            setNote(initialData.note || '');
+            setStatus(initialData.status || 'to_produce');
         }
     }, [initialData]);
 
-
     const handleSubmit = (e) => {
         e.preventDefault();
-
-        const formattedOrderDeadline = orderDeadline ? new Date(orderDeadline).toISOString().split("T")[0] : "";
-
         const orderData = {
+            id: initialData?.id || null, // Kluczowe dla edycji zamówienia
             product_id: selectedProduct,
             quantity,
-            order_deadline: formattedOrderDeadline  // Poprawna nazwa pola!
+            order_deadline: orderDeadline,
+            note,
+            status
         };
-
-        console.log("Dane do wysłania:", orderData);  // Sprawdzenie poprawności danych przed wysłaniem
 
         onSave(orderData);
     };
@@ -52,6 +51,13 @@ function OrderModal({ isOpen, onClose, onSave, initialData, products }) {
 
                     <label>Termin realizacji:</label>
                     <input type="date" value={orderDeadline} onChange={(e) => setOrderDeadline(e.target.value)} required />
+
+                    <label>Status:</label>
+                    <select value={status} onChange={(e) => setStatus(e.target.value)} required>
+                        <option value="to_produce">Do produkcji</option>
+                        <option value="ready">Gotowy do wysyłki</option>
+                        <option value="shipped">Wysłany</option>
+                    </select>
 
                     <label>Notatki:</label>
                     <textarea value={note} onChange={(e) => setNote(e.target.value)} />
