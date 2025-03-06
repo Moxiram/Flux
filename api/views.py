@@ -1,6 +1,21 @@
 from rest_framework import viewsets
 from .models import Product, Warehouse, Order
-from .serializers import ProductSerializer, WarehouseSerializer, OrderSerializer
+from .serializers import ProductSerializer, WarehouseSerializer, OrderSerializer, RegisterSerializer, CustomUserSerializer
+from rest_framework import generics
+from django.contrib.auth import get_user_model
+
+CustomUser = get_user_model()
+
+# Widok rejestracji użytkownika
+class RegisterViewSet(generics.CreateAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = RegisterSerializer
+
+# Widok listowania użytkowników 
+class UserViewSet(generics.ListAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = CustomUserSerializer
+
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()

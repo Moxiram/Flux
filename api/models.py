@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
 # Create your models here.
 class Item(models.Model):
@@ -57,3 +58,33 @@ class Order(models.Model):
         status_label = dict(self.STATUS_CHOICES).get(self.status, "Nieznany status")
         overdue_status = "✅ W terminie" if not self.is_overdue() else "❌ Przeterminowane"
         return f"Zamówienie na {self.product.name} ({self.quantity}) - {status_label} - Termin: {self.order_deadline} - {overdue_status}"
+
+
+class UserAddress(models.Model):
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.email} - {self.phone}"
+
+
+class CustomUser(AbstractUser):
+    
+    ROLE_CHOICES = [
+        ('admin', 'Admin'),
+        ('office', 'Office'),
+        ('production', 'Production'),
+        ('transport', 'Transport')
+    ]
+    role = models.CharField(max_length=50, default='user', choices=ROLE_CHOICES)
+    
+    address = models.OneToOneField(
+        UserAddress,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='user'
+    )
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} ({self.username})"

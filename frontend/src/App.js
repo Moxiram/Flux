@@ -8,7 +8,7 @@ import OrderModal from './modals/OrderModal';
 import './App.css';
 
 function Navbar() {
-    const navigate = useNavigate(); // Teraz działa poprawnie, bo jest wewnątrz <Router>
+    const navigate = useNavigate(); // działa, bo jest wewnątrz <Router>
 
     const handleLogout = () => {
         alert("Wylogowano!");
@@ -25,6 +25,7 @@ function Navbar() {
                 <Link to="/orders">Zamówienia</Link>
                 <Link to="/products">Produkty</Link>
                 <Link to="/warehouses">Magazyny</Link>
+                <Link to="/users">Użytkownicy</Link>
                 <Link to="/about">O nas</Link>
             </div>
             <div className="nav-right">
