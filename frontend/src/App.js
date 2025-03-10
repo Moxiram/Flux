@@ -5,6 +5,8 @@ import About from './pages/Test1';
 import ProductModal from './modals/ProductModal';
 import WarehouseModal from './modals/WarehauseModal';
 import OrderModal from './modals/OrderModal';
+import DeliveryModal from './modals/DeliveryModal';
+import DemandModal from './modals/DemandModal'; 
 import './App.css';
 
 function Navbar() {
@@ -35,6 +37,7 @@ function Navbar() {
     );
 }
 
+//obsługi stanów
 function Home() {
     const [orders, setOrders] = useState([]);
     const [warehouses, setWarehouses] = useState([]);
@@ -48,8 +51,15 @@ function Home() {
     const [selectedWarehouse, setSelectedWarehouse] = useState('');
     const [selectedType, setSelectedType] = useState('');
     const [selectedDateFilter, setSelectedDateFilter] = useState("all");
-const [selectedProduct, setSelectedProduct] = useState("");
-const [selectedStatus, setSelectedStatus] = useState("");
+    const [selectedProduct, setSelectedProduct] = useState("");
+    const [selectedStatus, setSelectedStatus] = useState("");
+    const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
+    const [isDemandModalOpen, setIsDemandModalOpen] = useState(false);
+    const [editingDelivery, setEditingDelivery] = useState(null);
+    const [editingDemand, setEditingDemand] = useState(null);
+    const [deliveries, setDeliveries] = useState([]);
+    const [selectedDeliveryType, setSelectedDeliveryType] = useState("");
+    const [selectedTarget, setSelectedTarget] = useState("");
 
     useEffect(() => {
         fetchOrders();
@@ -83,6 +93,13 @@ const [selectedStatus, setSelectedStatus] = useState("");
         );
     });
 
+    const filteredDeliveries = deliveries.filter(delivery => {
+        return (
+            (selectedDeliveryType === "" || delivery.delivery_type === selectedDeliveryType) &&
+            (selectedTarget === "" || delivery.target_id == selectedTarget)
+        );
+    });
+
     const fetchOrders = () => {
         axios.get('http://127.0.0.1:8000/api/orders/')
             .then(response => setOrders(response.data))
@@ -100,6 +117,19 @@ const [selectedStatus, setSelectedStatus] = useState("");
             .then(response => setProducts(response.data))
             .catch(error => console.error("Błąd podczas pobierania produktów!", error));
     };
+
+    const fetchDemands = () => {
+        axios.get('http://127.0.0.1:8000/api/demands/')
+            .then(response => console.log("Pobrane zapotrzebowania:", response.data))
+            .catch(error => console.error("Błąd podczas pobierania zapotrzebowań!", error));
+    };
+
+    const fetchDeliveries = () => {
+        axios.get('http://127.0.0.1:8000/api/deliveries/')
+            .then(response => setDeliveries(response.data))
+            .catch(error => console.error("Błąd podczas pobierania dostaw!", error));
+    };
+
 
     const openModal = (setModalOpen, setEditingItem, item = null) => {
         setEditingItem(item);
@@ -174,6 +204,7 @@ const [selectedStatus, setSelectedStatus] = useState("");
 
             {/* Lista zamówień */}
             <div className="grid">
+            <button className="btn" onClick={() => openModal(setIsDeliveryModalOpen, setEditingDelivery)}>Dodaj dostawę</button>
                 {filteredOrders.map(order => (
                     <div key={order.id} className="order-card">
                         <h3>Zamówienie #{order.id}</h3>
@@ -191,6 +222,7 @@ const [selectedStatus, setSelectedStatus] = useState("");
             <div className="section-header">
                 <h2>Magazyny</h2>
                 <button className="btn" onClick={() => openModal(setIsWarehouseModalOpen, setEditingWarehouse)}>Dodaj magazyn</button>
+                <button className="btn" onClick={() => openModal(setIsDemandModalOpen, setEditingDemand)}>Zgłoś zapotrzebowanie</button>
             </div>
             {warehouses.map(warehouse => (
                 <div key={warehouse.id} className="warehouse-item">
@@ -246,10 +278,64 @@ const [selectedStatus, setSelectedStatus] = useState("");
             </div>
 
 
+            {/* Sekcja Dostaw */}
+            <div className="section-header">
+                <h2>Dostawy</h2>
+                <button className="btn" onClick={() => openModal(setIsDeliveryModalOpen, setEditingDelivery)}>Dodaj dostawę</button>
+            </div>
+
+            {/* Filtry dostaw */}
+            <div className="filters">
+                <label>
+                    Filtruj po typie dostawy:
+                    <select value={selectedDeliveryType} onChange={(e) => setSelectedDeliveryType(e.target.value)}>
+                        <option value="">Wszystkie</option>
+                        <option value="order">Dostawa zamówienia</option>
+                        <option value="demand">Dostawa zapotrzebowania</option>
+                    </select>
+                </label>
+
+                <label>
+                    Filtruj po zamówieniu/zapotrzebowaniu:
+                    <select value={selectedTarget} onChange={(e) => setSelectedTarget(e.target.value)}>
+                        <option value="">Wszystkie</option>
+                        {deliveries.map(delivery => (
+                            <option key={delivery.id} value={delivery.target_id}>
+                                {delivery.delivery_type === "order" ? `Zamówienie #${delivery.target_id}` : `Zapotrzebowanie #${delivery.target_id}`}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+            </div>
+
+            {/* Lista dostaw */}
+            <div className="grid">
+                {filteredDeliveries.map(delivery => (
+                    <div key={delivery.id} className="delivery-card">
+                        <h3>Dostawa #{delivery.id}</h3>
+                        <p>Typ: {delivery.delivery_type === "order" ? "Zamówienie klienta" : "Zapotrzebowanie do produkcji"}</p>
+                        <p>Obiekt: {delivery.delivery_type === "order" ? `Zamówienie #${delivery.target_id}` : `Zapotrzebowanie #${delivery.target_id}`}</p>
+                        <p>Ilość dostarczona: {delivery.delivered_quantity}</p>
+                        <p>Notatki: {delivery.note || "Brak"}</p>
+                        <button className="btn-edit" onClick={() => openModal(setIsDeliveryModalOpen, setEditingDelivery, delivery)}>Edytuj</button>
+                    </div>
+                ))}
+            </div>
+
+
             {/* Modale */}
             <ProductModal isOpen={isProductModalOpen} onClose={() => closeModal(setIsProductModalOpen, setEditingProduct)} onSave={(data) => handleSave('http://127.0.0.1:8000/api/products/', data, fetchProducts, () => closeModal(setIsProductModalOpen, setEditingProduct))} initialData={editingProduct} warehouses={warehouses} />
             <WarehouseModal isOpen={isWarehouseModalOpen} onClose={() => closeModal(setIsWarehouseModalOpen, setEditingWarehouse)} onSave={(data) => handleSave('http://127.0.0.1:8000/api/warehouses/', data, fetchWarehouses, () => closeModal(setIsWarehouseModalOpen, setEditingWarehouse))} initialData={editingWarehouse} />
             <OrderModal isOpen={isOrderModalOpen} onClose={() => closeModal(setIsOrderModalOpen, setEditingOrder)} onSave={(data) => handleSave('http://127.0.0.1:8000/api/orders/', data, fetchOrders, () => closeModal(setIsOrderModalOpen, setEditingOrder))} initialData={editingOrder} products={products} />
+            <DemandModal isOpen={isDemandModalOpen} onClose={() => closeModal(setIsDemandModalOpen, setEditingDemand)}  onSave={(data) => handleSave('http://127.0.0.1:8000/api/demands/', data, fetchDemands, () => closeModal(setIsDemandModalOpen, setEditingDemand))} initialData={editingDemand} products={products} /> 
+            <DeliveryModal
+                isOpen={isDeliveryModalOpen}
+                onClose={() => closeModal(setIsDeliveryModalOpen, setEditingDelivery)}
+                onSave={(data) => handleSave('http://127.0.0.1:8000/api/deliveries/', data, fetchDeliveries, () => closeModal(setIsDeliveryModalOpen, setEditingDelivery))}
+                initialData={editingDelivery}
+                orders={orders}
+                demands={demands}   
+            />
         </div>
     );
 }

@@ -1,5 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.utils.timezone import now
 
 # Create your models here.
 class Item(models.Model):
@@ -88,3 +91,39 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.username})"
+    
+class Delivery(models.Model):
+    DELIVERY_TYPE_CHOICES = [
+        ('order', 'Dostawa zamówienia'),
+        ('demand', 'Dostawa zapotrzebowania'),
+    ]
+    # Określa typ dostawy
+    delivery_type = models.CharField(max_length=20, choices=DELIVERY_TYPE_CHOICES)
+    
+    # Pola wspólne dla obu typów dostaw
+    delivery_date = models.DateField(auto_now_add=True)  # Data dostawy
+    delivered_quantity = models.CharField(max_length=50)  # Ilość dostarczona (np. "10kg", "20 litrów")
+    note = models.TextField(blank=True, null=True)        # Opcjonalne notatki
+    
+    # GenericForeignKey do powiązania z obiektem, którego dotyczy dostawa (np. Order lub Demand)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    target_object = GenericForeignKey('content_type', 'object_id')
+    
+    def __str__(self):
+        return f"{self.get_delivery_type_display()} - {self.delivered_quantity} - {self.delivery_date}"   
+    
+
+
+class Demand(models.Model):
+    product = models.ForeignKey(
+        'Product',  # zakładając, że masz model Product w tym samym pliku lub zaimportowany
+        on_delete=models.CASCADE,
+        related_name="demands"
+    )
+    quantity = models.CharField(max_length=50)  # np. "10kg", "20 litrów"
+    demand_date = models.DateTimeField(auto_now_add=True)  # Data zgłoszenia zapotrzebowania
+    due_date = models.DateField()  # Termin, na kiedy zapotrzebowanie ma być spełnione    
+    note = models.TextField(blank=True, null=True)  # Opcjonalne notatki dotyczące zapotrzebowania    
+    def __str__(self):        
+        return f"Demand for {self.product.name} ({self.quantity}) - Due: {self.due_date}"
