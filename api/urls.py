@@ -9,8 +9,7 @@ router = DefaultRouter()
 router.register(r'products', ProductViewSet)  # Obsługa endpointu /api/products/
 router.register(r'warehouses', WarehouseViewSet)  # Obsługa /api/warehouses/
 router.register(r'orders', OrderViewSet)  # Obsługa /api/orders/
-router.register(r'register', RegisterViewSet)
-router.register(r'users', UserViewSet)
+
 
 urlpatterns = [
     path('', include(router.urls)),  # Mapowanie adresu /api/ 
