@@ -1,6 +1,6 @@
 from rest_framework import viewsets
-from .models import Product, Warehouse, Order
-from .serializers import ProductSerializer, WarehouseSerializer, OrderSerializer, RegisterSerializer, CustomUserSerializer
+from .models import Product, Warehouse, Order, Delivery, Demand
+from .serializers import ProductSerializer, WarehouseSerializer, OrderSerializer, RegisterSerializer, CustomUserSerializer, DeliverySerializer, DemandSerializer
 from rest_framework import generics
 from django.contrib.auth import get_user_model
 
@@ -28,3 +28,11 @@ class WarehouseViewSet(viewsets.ModelViewSet):
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+
+class DeliveryViewSet(viewsets.ModelViewSet):
+    queryset = Delivery.objects.all()
+    serializer_class = DeliverySerializer
+
+class DemandViewSet(viewsets.ModelViewSet):
+    queryset = Demand.objects.all()
+    serializer_class = DemandSerializer
