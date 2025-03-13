@@ -10,7 +10,7 @@ router.register(r'products', ProductViewSet)  # Obsługa endpointu /api/products
 router.register(r'warehouses', WarehouseViewSet)  # Obsługa /api/warehouses/
 router.register(r'orders', OrderViewSet)  # Obsługa /api/orders/
 router.register(r'deliveries', DeliveryViewSet)
-
+router.register(r'users', UserViewSet)
 router.register(r'demands', DemandViewSet)
 
 urlpatterns = [

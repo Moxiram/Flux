@@ -12,7 +12,7 @@ class RegisterViewSet(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
 # Widok listowania użytkowników 
-class UserViewSet(generics.ListAPIView):
+class UserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
 

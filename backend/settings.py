@@ -82,17 +82,19 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'logisticDB',  # Nazwa bazy danych
-        'USER': 'postgres',  # Użytkownik PostgreSQL
-        'PASSWORD': 'admin',  # Hasło PostgreSQL
-        'HOST': 'localhost',  # Serwer bazy danych
-        'PORT': '5432',  # Port PostgreSQL
+        'NAME': 'logisticDB',  
+        'USER': 'postgres',  
+        'PASSWORD': 'admin', 
+        'HOST': 'localhost',  
+        'PORT': '5432',  
     }
 }
 
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
+
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -140,3 +142,5 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
+
+AUTH_USER_MODEL = 'api.CustomUser'
