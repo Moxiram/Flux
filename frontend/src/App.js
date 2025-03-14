@@ -153,7 +153,19 @@ function Home() {
             closeModalFunction(); // Zamknięcie modala
         } catch (error) {
             console.error("Błąd podczas zapisywania!", error.response?.data || error);
-            alert("Wystąpił błąd podczas zapisu!");
+            
+            // Pobieramy komunikat błędu z backendu
+            let errorMessage = "Wystąpił błąd podczas zapisu!";
+            
+            if (error.response) {
+                // Jeśli API zwróciło odpowiedź, pobieramy szczegóły błędu
+                errorMessage = error.response.data?.detail || JSON.stringify(error.response.data);
+            } else if (error.message) {
+                // Jeśli błąd pochodzi z sieci (np. brak połączenia z serwerem)
+                errorMessage = error.message;
+            }
+            
+            alert(errorMessage);
         }
     };
     
