@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.utils.timezone import now
-from django.contrib.auth.models import AbstractUser, Group, Permission
+
 
 # Create your models here.
 class Item(models.Model):
@@ -70,23 +70,6 @@ class UserAddress(models.Model):
     def __str__(self):
         return f"{self.email} - {self.phone}"
 
-
-class CustomUser(AbstractUser):
-    name = models.CharField(max_length=100)
-    surname = models.CharField(max_length=100)
-    address = models.ForeignKey("UserAddress", on_delete=models.SET_NULL, null=True, blank=True)
-    role = models.CharField(
-        max_length=50, 
-        choices=[("admin", "Admin"), ("user", "User")], 
-        default="user"  # Ustawienie domyślnej roli
-    )
-
-    # Naprawienie konfliktu z domyślnym modelem Django
-    groups = models.ManyToManyField(Group, related_name="custom_users", blank=True)
-    user_permissions = models.ManyToManyField(Permission, related_name="custom_users_permissions", blank=True)
-
-    def __str__(self):
-        return f"{self.username} ({self.role})"
     
 class Delivery(models.Model):
     DELIVERY_TYPE_CHOICES = [

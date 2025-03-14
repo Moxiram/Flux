@@ -60,6 +60,7 @@ function Home() {
     const [deliveries, setDeliveries] = useState([]);
     const [selectedDeliveryType, setSelectedDeliveryType] = useState("");
     const [selectedTarget, setSelectedTarget] = useState("");
+    const [demands, setDemands] = useState([]);
 
     useEffect(() => {
         fetchOrders();
@@ -96,7 +97,7 @@ function Home() {
     const filteredDeliveries = deliveries.filter(delivery => {
         return (
             (selectedDeliveryType === "" || delivery.delivery_type === selectedDeliveryType) &&
-            (selectedTarget === "" || delivery.target_id == selectedTarget)
+            (selectedTarget === "" || delivery.target_id === selectedTarget)
         );
     });
 
@@ -129,7 +130,6 @@ function Home() {
             .then(response => setDeliveries(response.data))
             .catch(error => console.error("Błąd podczas pobierania dostaw!", error));
     };
-
 
     const openModal = (setModalOpen, setEditingItem, item = null) => {
         setEditingItem(item);
@@ -167,6 +167,7 @@ function Home() {
             <div className="section-header">
                 <h2>Lista Zamówień</h2>
                 <button className="btn" onClick={() => openModal(setIsOrderModalOpen, setEditingOrder)}>Dodaj zamówienie</button>
+                <button className="btn" onClick={() => openModal(setIsDeliveryModalOpen, setEditingDelivery)}>Dodaj dostawę</button>
             </div>
 
             {/* Filtry */}
@@ -204,7 +205,7 @@ function Home() {
 
             {/* Lista zamówień */}
             <div className="grid">
-            <button className="btn" onClick={() => openModal(setIsDeliveryModalOpen, setEditingDelivery)}>Dodaj dostawę</button>
+            
                 {filteredOrders.map(order => (
                     <div key={order.id} className="order-card">
                         <h3>Zamówienie #{order.id}</h3>

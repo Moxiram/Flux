@@ -10,28 +10,12 @@ class UserAddressSerializer(serializers.ModelSerializer):
         model = UserAddress
         fields = ['id', 'phone', 'email']
 
-class CustomUserSerializer(serializers.ModelSerializer):
-    # Wyświetlanie pełnych danych adresowych
-    address = UserAddressSerializer(read_only=True)
-    
+# Serializer do logowania
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'first_name', 'last_name', 'role', 'address']
+        fields = ['id', 'username', 'first_name', 'last_name', 'role']
 
-# Serializer do rejestracji
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
-    
-
-    class Meta:
-        model = CustomUser
-        fields = ['username', 'first_name', 'last_name', 'password', 'role']
-
-    def create(self, validated_data):
-        user = CustomUser(**validated_data)
-        user.set_password(validated_data['password'])
-        user.save()
-        return user
 
 
 class WarehouseSerializer(serializers.ModelSerializer):
