@@ -2,43 +2,46 @@ from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.utils.timezone import now
+from django.utils import timezone
 
 
-# Create your models here.
-class Item(models.Model):
-    name = models.CharField(max_length=255)
-    description = models.TextField()
+class Address(models.Model):
+    street = models.CharField(max_length=255)
+    city = models.CharField(max_length=100)
+    country = models.CharField(max_length=100)
+    postal_code = models.CharField(max_length=20)
+    note = models.TextField(blank=True, null=True)  # Opcjonalne notatki, np. kod do bramy
 
     def __str__(self):
-        return self.name
-
-
+        return f"{self.street}, {self.city}, {self.country}"
+    
 class Warehouse(models.Model):
-    name = models.CharField(max_length=255, unique=True)  # Nazwa magazynu
-    location = models.CharField(max_length=255)  # Lokalizacja magazynu
-    note = models.TextField(blank=True, null=True)  # Notatki (opcjonalnie)
+    name = models.CharField(max_length=255, unique=True)
+    address = models.OneToOneField(Address, on_delete=models.CASCADE, null=True, blank=True)
+    note = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.name} - {self.location}"
-
-
+        return f"{self.name} - {self.address}"
+    
 class Product(models.Model):
-    name = models.CharField(max_length=255)  # Nazwa produktu
-    quantity = models.CharField(max_length=50)  # Ilość (np. "10kg", "12 litrów")
-    type = models.CharField(max_length=100, blank=True, null=True)  # Typ produktu (opcjonalnie)
-    warehouse = models.ForeignKey(
-        Warehouse, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
-        related_name="products"
-    )  # Magazyn (może być NULL)
-    note = models.TextField(blank=True, null=True)  # Opcjonalne notatki dotyczące produktu
+    name = models.CharField(max_length=255)
+    type = models.CharField(max_length=100, blank=True, null=True)  # np. surowiec, wyrób gotowy
+    note = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.name} ({self.quantity})"
+        return f"{self.name}"
+    
+class Stock(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="stocks")
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name="stocks")
+    quantity = models.CharField(max_length=50, default="0")  # np. "100kg", "50 szt"
 
+    class Meta:
+        unique_together = ('product', 'warehouse')  # Jednoznaczny rekord na (produkt, magazyn)
 
+    def __str__(self):
+        return f"{self.product.name} w {self.warehouse.name} - {self.quantity}"
+    
 class Order(models.Model):
     STATUS_CHOICES = [
         ('to_produce', 'Do produkcji'),
@@ -46,63 +49,63 @@ class Order(models.Model):
         ('shipped', 'Wysłany'),
     ]
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="orders")  # Powiązanie z produktem
-    quantity = models.CharField(max_length=50)  # Ilość (np. "10kg", "20 litrów")
-    order_date = models.DateTimeField(auto_now_add=True)  # Data utworzenia zamówienia
-    order_deadline = models.DateField()  # Termin wysyłki
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='to_produce')  # ✅ Przeniesione z `Product`
-    note = models.TextField(blank=True, null=True)  # ✅ Nowe pole na notatki o zamówieniu
-
-    def is_overdue(self):
-        """Sprawdza, czy zamówienie jest przeterminowane."""
-        return self.order_deadline < now().date()
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="orders")
+    quantity = models.CharField(max_length=50)  # np. "10kg", "20 litrów"
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
+    client_address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True, blank=True)
+    order_date = models.DateTimeField(auto_now_add=True)
+    order_deadline = models.DateField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='to_produce')
+    note = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        status_label = dict(self.STATUS_CHOICES).get(self.status, "Nieznany status")
-        overdue_status = "✅ W terminie" if not self.is_overdue() else "❌ Przeterminowane"
-        return f"Zamówienie na {self.product.name} ({self.quantity}) - {status_label} - Termin: {self.order_deadline} - {overdue_status}"
-
-
-class UserAddress(models.Model):
-    phone = models.CharField(max_length=20, blank=True, null=True)
-    email = models.EmailField(blank=True, null=True)
+        return f"Zamówienie na {self.product.name} ({self.quantity}) - termin: {self.order_deadline}"
+    
+class Demand(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="demands")
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name="demands")
+    quantity = models.CharField(max_length=50)
+    demand_date = models.DateTimeField(auto_now_add=True)
+    due_date = models.DateField()
+    note = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.email} - {self.phone}"
-
+        return f"Zapotrzebowanie: {self.product.name} ({self.quantity}) -> {self.warehouse.name}"
     
 class Delivery(models.Model):
     DELIVERY_TYPE_CHOICES = [
         ('order', 'Dostawa zamówienia'),
         ('demand', 'Dostawa zapotrzebowania'),
     ]
-    # Określa typ dostawy
+
     delivery_type = models.CharField(max_length=20, choices=DELIVERY_TYPE_CHOICES)
-    
-    # Pola wspólne dla obu typów dostaw
-    delivery_date = models.DateField(auto_now_add=True)  # Data dostawy
-    delivered_quantity = models.CharField(max_length=50)  # Ilość dostarczona (np. "10kg", "20 litrów")
-    note = models.TextField(blank=True, null=True)        # Opcjonalne notatki
-    
-    # GenericForeignKey do powiązania z obiektem, którego dotyczy dostawa (np. Order lub Demand)
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    target_object = GenericForeignKey('content_type', 'object_id')
-    
-    def __str__(self):
-        return f"{self.get_delivery_type_display()} - {self.delivered_quantity} - {self.delivery_date}"   
-    
+    delivery_date = models.DateField(auto_now_add=True)
+    delivered_quantity = models.CharField(max_length=50)
+    note = models.TextField(blank=True, null=True)
 
-
-class Demand(models.Model):
-    product = models.ForeignKey(
-        'Product',  # zakładając, że masz model Product w tym samym pliku lub zaimportowany
-        on_delete=models.CASCADE,
-        related_name="demands"
+    source_warehouse = models.ForeignKey(
+        Warehouse, 
+        on_delete=models.SET_NULL, 
+        related_name="outgoing_deliveries", 
+        null=True, 
+        blank=True
     )
-    quantity = models.CharField(max_length=50)  # np. "10kg", "20 litrów"
-    demand_date = models.DateTimeField(auto_now_add=True)  # Data zgłoszenia zapotrzebowania
-    due_date = models.DateField()  # Termin, na kiedy zapotrzebowanie ma być spełnione    
-    note = models.TextField(blank=True, null=True)  # Opcjonalne notatki dotyczące zapotrzebowania    
-    def __str__(self):        
-        return f"Demand for {self.product.name} ({self.quantity}) - Due: {self.due_date}"
+    destination_warehouse = models.ForeignKey(
+        Warehouse, 
+        on_delete=models.SET_NULL, 
+        related_name="incoming_deliveries", 
+        null=True, 
+        blank=True
+    )
+
+    # Powiązanie z zamówieniem lub zapotrzebowaniem
+    order = models.ForeignKey('Order', on_delete=models.SET_NULL, null=True, blank=True)
+    demand = models.ForeignKey('Demand', on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        if self.delivery_type == 'order' and self.order:
+            return f"Dostawa zamówienia #{self.order.id} - {self.delivered_quantity}"
+        elif self.delivery_type == 'demand' and self.demand:
+            return f"Dostawa zapotrzebowania #{self.demand.id} - {self.delivered_quantity}"
+        else:
+            return f"{self.get_delivery_type_display()} - {self.delivered_quantity} - {self.delivery_date}"

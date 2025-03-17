@@ -1,28 +1,65 @@
 import React, { useState, useEffect } from 'react';
 
 function WarehouseModal({ isOpen, onClose, onSave, initialData }) {
+    // Pola magazynu
+    const [warehouseId, setWarehouseId] = useState(null);
     const [name, setName] = useState('');
-    const [location, setLocation] = useState('');
     const [note, setNote] = useState('');
+
+    // Pola adresu
+    const [addressId, setAddressId] = useState(null);
+    const [street, setStreet] = useState('');
+    const [city, setCity] = useState('');
+    const [country, setCountry] = useState('');
+    const [postalCode, setPostalCode] = useState('');
+    const [addressNote, setAddressNote] = useState('');
 
     useEffect(() => {
         if (initialData) {
+            // Magazyn
+            setWarehouseId(initialData.id || null);
             setName(initialData.name || '');
-            setLocation(initialData.location || '');
             setNote(initialData.note || '');
+
+            // Adres – jeśli jest w initialData.address
+            const addr = initialData.address || {};
+            setAddressId(addr.id || null);
+            setStreet(addr.street || '');
+            setCity(addr.city || '');
+            setCountry(addr.country || '');
+            setPostalCode(addr.postal_code || '');
+            setAddressNote(addr.note || '');
+        } else {
+            // Reset
+            setWarehouseId(null);
+            setName('');
+            setNote('');
+            setAddressId(null);
+            setStreet('');
+            setCity('');
+            setCountry('');
+            setPostalCode('');
+            setAddressNote('');
         }
     }, [initialData]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        // Przygotowujemy obiekt magazynu wraz z adresm
         const warehouseData = {
-            id: initialData?.id || null,  // Kluczowe dla edycji
+            id: warehouseId,
             name,
-            location,
-            note
+            note,
+            // Zakładamy, że w serializerze jest pole address (zagnieżdżony serializer)
+            address: {
+                id: addressId,
+                street,
+                city,
+                country,
+                postal_code: postalCode,
+                note: addressNote
+            }
         };
-
-        console.log("Wysyłane dane magazynu:", warehouseData); // Sprawdzenie danych w konsoli
         onSave(warehouseData);
     };
 
@@ -31,16 +68,58 @@ function WarehouseModal({ isOpen, onClose, onSave, initialData }) {
     return (
         <div className="modal-overlay">
             <div className="modal-content">
-                <h2>{initialData ? 'Edytuj magazyn' : 'Dodaj nowy magazyn'}</h2>
+                <h2>{warehouseId ? 'Edytuj magazyn' : 'Dodaj nowy magazyn'}</h2>
                 <form onSubmit={handleSubmit}>
-                    <label>Nazwa:</label>
-                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+                    {/* Sekcja magazynu */}
+                    <label>Nazwa magazynu:</label>
+                    <input 
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                    />
 
-                    <label>Lokalizacja:</label>
-                    <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} required />
+                    <label>Notatki (magazyn):</label>
+                    <textarea
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                    />
 
-                    <label>Notatki:</label>
-                    <textarea value={note} onChange={(e) => setNote(e.target.value)} />
+                    <hr />
+                    <h4>Adres magazynu</h4>
+                    <label>Ulica:</label>
+                    <input
+                        type="text"
+                        value={street}
+                        onChange={(e) => setStreet(e.target.value)}
+                    />
+
+                    <label>Miasto:</label>
+                    <input
+                        type="text"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                    />
+
+                    <label>Kraj:</label>
+                    <input
+                        type="text"
+                        value={country}
+                        onChange={(e) => setCountry(e.target.value)}
+                    />
+
+                    <label>Kod pocztowy:</label>
+                    <input
+                        type="text"
+                        value={postalCode}
+                        onChange={(e) => setPostalCode(e.target.value)}
+                    />
+
+                    <label>Notatki (adres):</label>
+                    <textarea
+                        value={addressNote}
+                        onChange={(e) => setAddressNote(e.target.value)}
+                    />
 
                     <button type="submit">Zapisz</button>
                     <button type="button" onClick={onClose}>Anuluj</button>
