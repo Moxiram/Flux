@@ -54,7 +54,7 @@ class Order(models.Model):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
     client_address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True, blank=True)
     order_date = models.DateTimeField(auto_now_add=True)
-    order_deadline = models.DateField()
+    order_deadline = models.DateField(blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='to_produce')
     note = models.TextField(blank=True, null=True)
 
@@ -63,10 +63,10 @@ class Order(models.Model):
     
 class Demand(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="demands")
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name="demands")
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name="demands", blank=True, null=True)
     quantity = models.CharField(max_length=50)
     demand_date = models.DateTimeField(auto_now_add=True)
-    due_date = models.DateField()
+    due_date = models.DateField(blank=True, null=True)
     note = models.TextField(blank=True, null=True)
 
     def __str__(self):

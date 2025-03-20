@@ -4,34 +4,55 @@ function ProductModal({
     isOpen, 
     onClose, 
     onSave, 
-    initialData 
+    initialData,
+    warehouses = [] // <-- domyślnie pusta tablica
 }) {
-    const [id, setId] = useState(null);
+    // Pola produktu
+    const [productId, setProductId] = useState(null);
     const [name, setName] = useState("");
     const [type, setType] = useState("");
     const [note, setNote] = useState("");
 
+    // Pola stock
+    const [stockId, setStockId] = useState(null);
+    const [selectedWarehouse, setSelectedWarehouse] = useState("");
+    const [quantity, setQuantity] = useState("");
+
     useEffect(() => {
         if (initialData) {
-            setId(initialData.id || null);
+            setProductId(initialData.id || null);
             setName(initialData.name || "");
             setType(initialData.type || "");
             setNote(initialData.note || "");
+
+            const st = initialData.stock || {};
+            setStockId(st.id || null);
+            setSelectedWarehouse(st.warehouse?.id || "");
+            setQuantity(st.quantity || "");
         } else {
-            setId(null);
+            setProductId(null);
             setName("");
             setType("");
             setNote("");
+
+            setStockId(null);
+            setSelectedWarehouse("");
+            setQuantity("");
         }
     }, [initialData]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         const productData = {
-            id,
+            id: productId,
             name,
             type,
             note,
+            stock: {
+                id: stockId,
+                warehouse_id: selectedWarehouse || null,
+                quantity
+            }
         };
         onSave(productData);
     };
@@ -41,30 +62,54 @@ function ProductModal({
     return (
         <div className="modal-overlay">
             <div className="modal-content">
-                <h2>{id ? "Edytuj produkt" : "Dodaj nowy produkt"}</h2>
+                <h2>{productId ? "Edytuj produkt" : "Dodaj nowy produkt"}</h2>
                 <form onSubmit={handleSubmit}>
                     <label>Nazwa produktu:</label>
                     <input 
                         type="text" 
-                        value={name} 
-                        onChange={(e) => setName(e.target.value)} 
-                        required 
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
                     />
 
                     <label>Typ produktu (np. surowiec, wyrób gotowy):</label>
-                    <input 
-                        type="text" 
-                        value={type} 
-                        onChange={(e) => setType(e.target.value)} 
+                    <input
+                        type="text"
+                        value={type}
+                        onChange={(e) => setType(e.target.value)}
                     />
 
-                    <label>Notatki:</label>
-                    <textarea 
-                        value={note} 
-                        onChange={(e) => setNote(e.target.value)} 
+                    <label>Notatki (produkt):</label>
+                    <textarea
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
                     />
 
-                    <button type="submit">{id ? "Zapisz zmiany" : "Dodaj produkt"}</button>
+                    <hr />
+                    <h4>Stan magazynowy (Stock)</h4>
+                    <label>Magazyn:</label>
+                    <select
+                        value={selectedWarehouse}
+                        onChange={(e) => setSelectedWarehouse(e.target.value)}
+                    >
+                        <option value="">Brak</option>
+                        {warehouses.map((wh) => (
+                            <option key={wh.id} value={wh.id}>
+                                {wh.name}
+                            </option>
+                        ))}
+                    </select>
+
+                    <label>Ilość (np. "100kg"):</label>
+                    <input
+                        type="text"
+                        value={quantity}
+                        onChange={(e) => setQuantity(e.target.value)}
+                    />
+
+                    <button type="submit" style={{ marginTop: "1rem" }}>
+                        {productId ? "Zapisz zmiany" : "Dodaj produkt"}
+                    </button>
                     <button type="button" onClick={onClose}>Anuluj</button>
                 </form>
             </div>

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
 function WarehouseModal({ isOpen, onClose, onSave, initialData }) {
-    // Pola magazynu
+    // Pola dotyczące Warehouse
     const [warehouseId, setWarehouseId] = useState(null);
     const [name, setName] = useState('');
     const [note, setNote] = useState('');
 
-    // Pola adresu
+    // Pola dotyczące Address
     const [addressId, setAddressId] = useState(null);
     const [street, setStreet] = useState('');
     const [city, setCity] = useState('');
@@ -16,12 +16,12 @@ function WarehouseModal({ isOpen, onClose, onSave, initialData }) {
 
     useEffect(() => {
         if (initialData) {
-            // Magazyn
+            // Ustawiamy wartości Warehouse
             setWarehouseId(initialData.id || null);
             setName(initialData.name || '');
             setNote(initialData.note || '');
 
-            // Adres – jeśli jest w initialData.address
+            // Ustawiamy wartości Address (może być pusty, jeśli warehouse.address == null)
             const addr = initialData.address || {};
             setAddressId(addr.id || null);
             setStreet(addr.street || '');
@@ -30,10 +30,12 @@ function WarehouseModal({ isOpen, onClose, onSave, initialData }) {
             setPostalCode(addr.postal_code || '');
             setAddressNote(addr.note || '');
         } else {
-            // Reset
+            // Reset – nowy magazyn
             setWarehouseId(null);
             setName('');
             setNote('');
+
+            // Reset – nowy adres
             setAddressId(null);
             setStreet('');
             setCity('');
@@ -45,12 +47,13 @@ function WarehouseModal({ isOpen, onClose, onSave, initialData }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Przygotowujemy obiekt magazynu wraz z adresm
+
+        // Obiekt, który wyślemy do API
+        // Zgodnie z WarehouseSerializer (adres zagnieżdżony)
         const warehouseData = {
             id: warehouseId,
             name,
             note,
-            // Zakładamy, że w serializerze jest pole address (zagnieżdżony serializer)
             address: {
                 id: addressId,
                 street,
@@ -60,6 +63,8 @@ function WarehouseModal({ isOpen, onClose, onSave, initialData }) {
                 note: addressNote
             }
         };
+
+        // Wywołanie onSave – np. handleSave w App.js
         onSave(warehouseData);
     };
 
@@ -70,7 +75,7 @@ function WarehouseModal({ isOpen, onClose, onSave, initialData }) {
             <div className="modal-content">
                 <h2>{warehouseId ? 'Edytuj magazyn' : 'Dodaj nowy magazyn'}</h2>
                 <form onSubmit={handleSubmit}>
-                    {/* Sekcja magazynu */}
+                    {/* Sekcja Warehouse */}
                     <label>Nazwa magazynu:</label>
                     <input 
                         type="text"
@@ -87,6 +92,7 @@ function WarehouseModal({ isOpen, onClose, onSave, initialData }) {
 
                     <hr />
                     <h4>Adres magazynu</h4>
+
                     <label>Ulica:</label>
                     <input
                         type="text"
@@ -121,8 +127,12 @@ function WarehouseModal({ isOpen, onClose, onSave, initialData }) {
                         onChange={(e) => setAddressNote(e.target.value)}
                     />
 
-                    <button type="submit">Zapisz</button>
-                    <button type="button" onClick={onClose}>Anuluj</button>
+                    <button type="submit" style={{ marginTop: "1rem" }}>
+                        Zapisz
+                    </button>
+                    <button type="button" onClick={onClose}>
+                        Anuluj
+                    </button>
                 </form>
             </div>
         </div>

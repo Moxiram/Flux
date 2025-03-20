@@ -63,50 +63,103 @@ class OrderSerializer(serializers.ModelSerializer):
         return order
 
 class WarehouseSerializer(serializers.ModelSerializer):
-    # Wyświetlanie pełnych danych Address (zagnieżdżone)
-    address = AddressSerializer(read_only=True)
+    address = AddressSerializer(required=False)
     address_id = serializers.PrimaryKeyRelatedField(
-        queryset=Address.objects.all(), 
-        source='address', 
-        write_only=True, 
-        allow_null=True
+        queryset=Address.objects.all(), source='address',
+        write_only=True, required=False, allow_null=True
     )
 
     class Meta:
         model = Warehouse
-        fields = ['id', 'name', 'address', 'address_id', 'note']
+        fields = ['id', 'name', 'note', 'address', 'address_id']
 
-    """
-    Adres możesz tworzyć osobnym endpointem. 
-    Jeśli chcesz tworzyć address inline, potrzebujesz custom create/update metod.
-    """
+    def create(self, validated_data):
+        """
+        Tworzenie magazynu + ewentualne tworzenie/aktualizacja adresu
+        """
+        address_data = validated_data.pop('address', None)  # dane zagnieżdżonego address
+        warehouse = Warehouse.objects.create(**validated_data)
 
+        if address_data:
+            # Użytkownik wysłał: address: {street, city, ...}
+            # Tworzymy nowy address
+            addr = Address.objects.create(**address_data)
+            warehouse.address = addr
+            warehouse.save()
 
-class ProductSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Product
-        fields = '__all__'
+        return warehouse
+
+    def update(self, instance, validated_data):
+        address_data = validated_data.pop('address', None)
+
+        instance.name = validated_data.get('name', instance.name)
+        instance.note = validated_data.get('note', instance.note)
+        instance.save()
+
+        if address_data:
+            # Edytujemy (lub tworzymy) address
+            if instance.address:
+                # Modyfikujemy istniejący address
+                for key, value in address_data.items():
+                    setattr(instance.address, key, value)
+                instance.address.save()
+            else:
+                # Nie było address, tworzymy nowy
+                addr = Address.objects.create(**address_data)
+                instance.address = addr
+                instance.save()
+        return instance
 
 
 class StockSerializer(serializers.ModelSerializer):
-    # Wyświetlanie nazwy produktu i magazynu w wersji odczytowej
-    product = ProductSerializer(read_only=True)
-    product_id = serializers.PrimaryKeyRelatedField(
-        queryset=Product.objects.all(), 
-        source='product',
+    warehouse_id = serializers.PrimaryKeyRelatedField(
+        queryset=Warehouse.objects.all(),
+        source='warehouse',
         write_only=True
     )
     warehouse = WarehouseSerializer(read_only=True)
-    warehouse_id = serializers.PrimaryKeyRelatedField(
-        queryset=Warehouse.objects.all(), 
-        source='warehouse', 
-        write_only=True
-    )
 
     class Meta:
         model = Stock
-        fields = ['id', 'product', 'product_id', 'warehouse', 'warehouse_id', 'quantity']
+        fields = ['id', 'warehouse', 'warehouse_id', 'quantity']
 
+class ProductSerializer(serializers.ModelSerializer):
+    stock = StockSerializer(required=False)
+
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'type', 'note', 'stock']
+
+    def create(self, validated_data):
+        stock_data = validated_data.pop('stock', None)
+        product = Product.objects.create(**validated_data)
+        if stock_data:
+            # Tworzymy stock (z linkiem do product)
+            stock_data['product'] = product
+            Stock.objects.create(**stock_data)
+        return product
+
+    def update(self, instance, validated_data):
+        stock_data = validated_data.pop('stock', None)
+        instance.name = validated_data.get('name', instance.name)
+        instance.type = validated_data.get('type', instance.type)
+        instance.note = validated_data.get('note', instance.note)
+        instance.save()
+
+        if stock_data:
+            # Edytujemy lub tworzymy Stock
+            # Załóżmy, że mamy 1:1 product->stock
+            if hasattr(instance, 'stock_set') and instance.stock_set.exists():
+                # Zakładamy, że jest tylko jeden stock
+                st = instance.stock_set.first()
+                st.warehouse = stock_data.get('warehouse', st.warehouse)
+                st.quantity = stock_data.get('quantity', st.quantity)
+                st.save()
+            else:
+                # Nie było stanu, tworzymy
+                stock_data['product'] = instance
+                Stock.objects.create(**stock_data)
+        return instance
 
 
 

@@ -177,7 +177,7 @@ function Home() {
     };
 
     // ================== ZAPIS (CRUD) ==================
-    // Posiadamy 'handleSave' (uniwersalny), 'handleSaveDelivery' (specjalny)...
+    // 'handleSave' (uniwersalny), 'handleSaveDelivery' (specjalny)...
 
     // Uniwersalny, np. do Product, Warehouse, Order, Demand:
     const handleSave = async (apiUrl, itemData, fetchFunction, closeModalFunction) => {
@@ -468,6 +468,7 @@ function Home() {
                     () => closeModal(setIsProductModalOpen, setEditingProduct)
                 )} 
                 initialData={editingProduct} 
+                warehouses={warehouses}
             />
 
             <WarehouseModal 
