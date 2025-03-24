@@ -30,7 +30,7 @@ function Navbar() {
                 <Link to="/products">Produkty</Link>
                 <Link to="/warehouses">Magazyny</Link>
                 <Link to="/users">Użytkownicy</Link>
-                <Link to="/about">O nas</Link>
+                <Link to="/about">Generator Danych</Link>
             </div>
             <div className="nav-right">
                 <button className="logout-btn" onClick={handleLogout}>Wyloguj</button>
