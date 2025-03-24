@@ -21,46 +21,7 @@ class AddressSerializer(serializers.ModelSerializer):
         model = Address
         fields = '__all__'
 
-class OrderSerializer(serializers.ModelSerializer):
-    client_address = AddressSerializer(required=False)
-    client_address_id = serializers.PrimaryKeyRelatedField(
-        queryset=Address.objects.all(), source='client_address',
-        write_only=True, allow_null=True
-    )
 
-    class Meta:
-        model = Order
-        fields = [
-            'id', 'product', 'product_id', 'quantity', 'order_deadline',
-            'status', 'note', 'warehouse', 'warehouse_id',
-            'client_address', 'client_address_id'
-        ]
-
-    def create(self, validated_data):
-        address_data = validated_data.pop('client_address', None)
-        # If there's client_address_id, it's already set in validated_data['client_address']
-        order = super().create(validated_data)
-        if address_data:
-            # Tworzymy / edytujemy adres
-            addr = Address.objects.create(**address_data)
-            order.client_address = addr
-            order.save()
-        return order
-
-    def update(self, instance, validated_data):
-        address_data = validated_data.pop('client_address', None)
-        order = super().update(instance, validated_data)
-        if address_data:
-            # Edytujemy istniejący lub tworzymy nowy
-            if order.client_address:
-                for key, value in address_data.items():
-                    setattr(order.client_address, key, value)
-                order.client_address.save()
-            else:
-                new_addr = Address.objects.create(**address_data)
-                order.client_address = new_addr
-                order.save()
-        return order
 
 class WarehouseSerializer(serializers.ModelSerializer):
     address = AddressSerializer(required=False)
@@ -148,7 +109,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
         if stock_data:
             # Edytujemy lub tworzymy Stock
-            # Załóżmy, że mamy 1:1 product->stock
+            
             if hasattr(instance, 'stock_set') and instance.stock_set.exists():
                 # Zakładamy, że jest tylko jeden stock
                 st = instance.stock_set.first()
@@ -159,6 +120,129 @@ class ProductSerializer(serializers.ModelSerializer):
                 # Nie było stanu, tworzymy
                 stock_data['product'] = instance
                 Stock.objects.create(**stock_data)
+        return instance
+
+class OrderSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(required=False)
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(),
+        source='product',
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+
+    client_address = AddressSerializer(required=False)
+    client_address_id = serializers.PrimaryKeyRelatedField(
+        queryset=Address.objects.all(),
+        source='client_address',
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+
+    warehouse_id = serializers.PrimaryKeyRelatedField(
+        queryset=Warehouse.objects.all(),
+        source='warehouse',
+        write_only=True,
+        required=False,
+        allow_null=True
+    )
+    warehouse = WarehouseSerializer(read_only=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            'id',
+            'product', 'product_id',
+            'quantity',
+            'warehouse', 'warehouse_id',
+            'client_address', 'client_address_id',
+            'order_date', 'order_deadline',
+            'status', 'note'
+        ]
+
+    def create(self, validated_data):
+        """Tworzenie nowego zamówienia z obsługą inline i/lub id."""
+        product_data = validated_data.pop('product', None)
+        address_data = validated_data.pop('client_address', None)
+
+        # 1. Sprawdzamy, czy DRF przekazał nam instancję Product
+        #    (user podał product_id) czy słownik (inline).
+        from .models import Product, Address
+        if isinstance(product_data, Product):
+            # Ustawiamy instancję w validated_data, żeby Order.objects.create mogło z niej skorzystać.
+            validated_data['product'] = product_data
+            product_data = None  # To nie jest słownik do tworzenia
+        if isinstance(address_data, Address):
+            validated_data['client_address'] = address_data
+            address_data = None
+
+        # 2. Tworzymy obiekt Order
+        order = Order.objects.create(**validated_data)
+
+        # 3. Jeśli user chciał inline product (słownik)
+        if product_data and isinstance(product_data, dict):
+            new_prod = Product.objects.create(**product_data)
+            order.product = new_prod
+            order.save()
+
+        # 4. Jeśli user chciał inline address (słownik)
+        if address_data and isinstance(address_data, dict):
+            new_addr = Address.objects.create(**address_data)
+            order.client_address = new_addr
+            order.save()
+
+        return order
+
+    def update(self, instance, validated_data):
+        """Edycja zamówienia: obsługa inline / id dla product i address."""
+        product_data = validated_data.pop('product', None)
+        address_data = validated_data.pop('client_address', None)
+
+        from .models import Product, Address
+
+        # Rozróżniamy instancję od słownika
+        if isinstance(product_data, Product):
+            validated_data['product'] = product_data
+            product_data = None
+        if isinstance(address_data, Address):
+            validated_data['client_address'] = address_data
+            address_data = None
+
+        # Aktualizujemy podstawowe pola
+        instance.quantity = validated_data.get('quantity', instance.quantity)
+        instance.order_deadline = validated_data.get('order_deadline', instance.order_deadline)
+        instance.status = validated_data.get('status', instance.status)
+        instance.note = validated_data.get('note', instance.note)
+
+        if 'warehouse' in validated_data:
+            instance.warehouse = validated_data['warehouse']
+
+        instance.save()
+
+        # Obsługa inline product
+        if product_data and isinstance(product_data, dict):
+            if instance.product:
+                for key, value in product_data.items():
+                    setattr(instance.product, key, value)
+                instance.product.save()
+            else:
+                new_p = Product.objects.create(**product_data)
+                instance.product = new_p
+                instance.save()
+
+        # Obsługa inline address
+        if address_data and isinstance(address_data, dict):
+            if instance.client_address:
+                for key, value in address_data.items():
+                    setattr(instance.client_address, key, value)
+                instance.client_address.save()
+            else:
+                new_addr = Address.objects.create(**address_data)
+                instance.client_address = new_addr
+                instance.save()
+
         return instance
 
 
@@ -187,58 +271,43 @@ class DemandSerializer(serializers.ModelSerializer):
 
 
 class DeliverySerializer(serializers.ModelSerializer):
-    # Dostawa – mamy typ (order/demand), 
-    # plus powiązanie z order i demand lub None
-    source_warehouse = WarehouseSerializer(read_only=True)
-    source_warehouse_id = serializers.PrimaryKeyRelatedField(
-        queryset=Warehouse.objects.all(), 
-        source='source_warehouse', 
-        write_only=True, 
-        allow_null=True
-    )
-    destination_warehouse = WarehouseSerializer(read_only=True)
-    destination_warehouse_id = serializers.PrimaryKeyRelatedField(
-        queryset=Warehouse.objects.all(), 
-        source='destination_warehouse', 
-        write_only=True, 
-        allow_null=True
-    )
-
+    delivery_type = serializers.CharField()
     order_id = serializers.PrimaryKeyRelatedField(
-        queryset=Order.objects.all(), 
-        source='order', 
-        write_only=True, 
+        queryset=Order.objects.all(),
+        source='order',
+        write_only=True,
+        required=False,  # user poda, jeśli delivery_type=order
         allow_null=True
     )
     demand_id = serializers.PrimaryKeyRelatedField(
-        queryset=Demand.objects.all(), 
-        source='demand', 
-        write_only=True, 
+        queryset=Demand.objects.all(),
+        source='demand',
+        write_only=True,
+        required=False,  # user poda, jeśli delivery_type=demand
         allow_null=True
     )
-    # Odczyt (tylko do podglądu):
-    order = OrderSerializer(read_only=True)
-    demand = DemandSerializer(read_only=True)
 
     class Meta:
         model = Delivery
         fields = [
             'id',
-            'delivery_type', 
-            'delivery_date', 
-            'delivered_quantity', 
+            'delivery_type',
+            'delivery_date',
+            'delivered_quantity',
             'note',
-
             'source_warehouse', 'source_warehouse_id',
             'destination_warehouse', 'destination_warehouse_id',
-
             'order', 'order_id',
             'demand', 'demand_id'
         ]
 
-    """
-    W create/update w widoku możesz sprawdzać, czy 
-    delivery_type == 'order' -> używamy order_id 
-    delivery_type == 'demand' -> używamy demand_id 
-    by uniknąć konfliktów (order & demand = null).
-    """
+    def validate(self, data):
+        dtype = data.get('delivery_type')
+        order = data.get('order')
+        demand = data.get('demand')
+
+        if dtype == 'order' and not order:
+            raise serializers.ValidationError("delivery_type='order' wymaga podania order_id.")
+        if dtype == 'demand' and not demand:
+            raise serializers.ValidationError("delivery_type='demand' wymaga podania demand_id.")
+        return data

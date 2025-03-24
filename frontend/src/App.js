@@ -121,6 +121,8 @@ function Home() {
           .catch(err => console.error("Błąd pobierania addresses", err));
       };
 
+
+
     // ================== FILTRY ==================
     const filteredOrders = orders.filter(order => {
         const today = new Date().toISOString().split("T")[0];
@@ -182,11 +184,31 @@ function Home() {
     // Uniwersalny, np. do Product, Warehouse, Order, Demand:
     const handleSave = async (apiUrl, itemData, fetchFunction, closeModalFunction) => {
         try {
+            // A. Walidacja w zależności od endpointu
+            if (apiUrl.includes('orders')) {
+                // Wymagamy product_id
+                if (!itemData.product_id) {
+                    alert("Musisz wybrać produkt dla zamówienia!");
+                    return;
+                }
+                
+            
+                if (!itemData.client_address_id && !itemData.client_address) {
+                    alert("Musisz wybrać adres istniejący ALBO wpisać nowy adres!");
+                    return;
+                }
+            }
+            if (apiUrl.includes('warehouses')) {
+                // Ewentualna walidacja magazynów...
+            }
+    
+            // B. Po przejściu walidacji frontowej – wysyłamy do backendu
             if (itemData.id) {
                 await axios.put(`${apiUrl}${itemData.id}/`, itemData);
             } else {
                 await axios.post(apiUrl, itemData);
             }
+    
             alert("Dane zapisane!");
             fetchFunction();
             closeModalFunction();

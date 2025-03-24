@@ -48,36 +48,59 @@ class Order(models.Model):
         ('ready', 'Gotowy do wysyłki'),
         ('shipped', 'Wysłany'),
     ]
-
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="orders")
-    quantity = models.CharField(max_length=50)  # np. "10kg", "20 litrów"
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
-    client_address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True, blank=True)
+    product = models.ForeignKey(
+        Product, 
+        on_delete=models.CASCADE, 
+        related_name="orders"
+        # null=False i blank=False domyślnie, wymaga product
+    )
+    quantity = models.CharField(max_length=50)  
+    warehouse = models.ForeignKey(
+        Warehouse, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name="orders"
+    )
+    client_address = models.ForeignKey(
+        Address, 
+        on_delete=models.CASCADE,
+        related_name="orders"
+        # null=False i blank=False domyślnie, wymaga address
+    )
     order_date = models.DateTimeField(auto_now_add=True)
     order_deadline = models.DateField(blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='to_produce')
     note = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"Zamówienie na {self.product.name} ({self.quantity}) - termin: {self.order_deadline}"
+        return f"Zamówienie {self.id} → {self.product.name} ({self.quantity})"
     
 class Demand(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="demands")
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name="demands", blank=True, null=True)
+    product = models.ForeignKey(
+        Product, 
+        on_delete=models.CASCADE,
+        related_name="demands"
+    )
+    warehouse = models.ForeignKey(
+        Warehouse,
+        on_delete=models.CASCADE,
+        related_name="demands",
+        default=1
+    )
     quantity = models.CharField(max_length=50)
     demand_date = models.DateTimeField(auto_now_add=True)
     due_date = models.DateField(blank=True, null=True)
     note = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"Zapotrzebowanie: {self.product.name} ({self.quantity}) -> {self.warehouse.name}"
+        return f"Zapotrzebowanie: {self.product.name} -> {self.warehouse.name}"
     
 class Delivery(models.Model):
     DELIVERY_TYPE_CHOICES = [
         ('order', 'Dostawa zamówienia'),
         ('demand', 'Dostawa zapotrzebowania'),
     ]
-
     delivery_type = models.CharField(max_length=20, choices=DELIVERY_TYPE_CHOICES)
     delivery_date = models.DateField(auto_now_add=True)
     delivered_quantity = models.CharField(max_length=50)
@@ -97,15 +120,16 @@ class Delivery(models.Model):
         null=True, 
         blank=True
     )
-
-    # Powiązanie z zamówieniem lub zapotrzebowaniem
-    order = models.ForeignKey('Order', on_delete=models.SET_NULL, null=True, blank=True)
-    demand = models.ForeignKey('Demand', on_delete=models.SET_NULL, null=True, blank=True)
+    order = models.ForeignKey(
+        'Order', 
+        on_delete=models.CASCADE,  # np. usuwając zamówienie, usuwamy też dostawy
+        null=True, blank=True
+    )
+    demand = models.ForeignKey(
+        'Demand', 
+        on_delete=models.CASCADE,
+        null=True, blank=True
+    )
 
     def __str__(self):
-        if self.delivery_type == 'order' and self.order:
-            return f"Dostawa zamówienia #{self.order.id} - {self.delivered_quantity}"
-        elif self.delivery_type == 'demand' and self.demand:
-            return f"Dostawa zapotrzebowania #{self.demand.id} - {self.delivered_quantity}"
-        else:
-            return f"{self.get_delivery_type_display()} - {self.delivered_quantity} - {self.delivery_date}"
+        return f"Dostawa {self.id} ({self.delivery_type})"

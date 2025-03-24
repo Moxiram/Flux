@@ -47,9 +47,7 @@ function WarehouseModal({ isOpen, onClose, onSave, initialData }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-
-        // Obiekt, który wyślemy do API
-        // Zgodnie z WarehouseSerializer (adres zagnieżdżony)
+    
         const warehouseData = {
             id: warehouseId,
             name,
@@ -63,8 +61,18 @@ function WarehouseModal({ isOpen, onClose, onSave, initialData }) {
                 note: addressNote
             }
         };
-
-        // Wywołanie onSave – np. handleSave w App.js
+    
+        // Walidacje przed wysłaniem
+        if (!name) {
+            alert("Nazwa magazynu jest wymagana!");
+            return;
+        }
+        // Jeśli zawsze musi być adres:
+        if (!street || !city || !country) {
+            alert("Uzupełnij dane adresowe (ulica, miasto, kraj)!");
+            return;
+        }
+    
         onSave(warehouseData);
     };
 

@@ -1,13 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
-/**
- * @param {Array} addresses – lista adresów (zawierają id, street, city, etc.)
- * @param {Function} onSave – wywoływane przy zapisie, np. (orderData) => { ... }
- * @param {Function} onClose – zamyka modal
- * @param {Object} initialData – wczytanie do edycji, np. { id, product, quantity, client_address: { id, ... } }
- * @param {Array} products – lista produktów do wyboru
- * @param {Array} warehouses – lista magazynów do wyboru (opcjonalnie)
- */
 function OrderModalWithAddressChoice({
     isOpen,
     onClose,
@@ -24,16 +17,13 @@ function OrderModalWithAddressChoice({
     const [orderDeadline, setOrderDeadline] = useState('');
     const [status, setStatus] = useState('to_produce');
     const [note, setNote] = useState('');
-
-    // Pola magazynu (opcjonalne)
     const [selectedWarehouse, setSelectedWarehouse] = useState('');
 
     // Mechanika adresu
-    const [useExistingAddress, setUseExistingAddress] = useState(true); // domyślnie wybieramy z listy
+    const [useExistingAddress, setUseExistingAddress] = useState(true);
     const [selectedAddressId, setSelectedAddressId] = useState('');
     
-    // Pola nowego adresu (jeśli chcemy dodać in-line)
-    const [newAddressId, setNewAddressId] = useState(null);  // przy edycji
+    // Pola nowego adresu
     const [street, setStreet] = useState('');
     const [city, setCity] = useState('');
     const [country, setCountry] = useState('');
@@ -41,40 +31,10 @@ function OrderModalWithAddressChoice({
     const [addressNote, setAddressNote] = useState('');
 
     useEffect(() => {
-        if (initialData) {
-            setOrderId(initialData.id || null);
-            setSelectedProduct(initialData.product?.id || '');
-            setQuantity(initialData.quantity || '');
-            setOrderDeadline(initialData.order_deadline || '');
-            setStatus(initialData.status || 'to_produce');
-            setNote(initialData.note || '');
-            setSelectedWarehouse(initialData.warehouse?.id || '');
 
-            // Adres klienta
-            const addr = initialData.client_address;
-            if (addr && addr.id) {
-                // Istniejący adres
-                setUseExistingAddress(true);
-                setSelectedAddressId(addr.id);
-                // Ale gdyby user chciał edytować in-line:
-                setNewAddressId(addr.id); 
-                setStreet(addr.street || '');
-                setCity(addr.city || '');
-                setCountry(addr.country || '');
-                setPostalCode(addr.postal_code || '');
-                setAddressNote(addr.note || '');
-            } else {
-                // Brak adresu
-                setUseExistingAddress(true);
-                setSelectedAddressId('');
-                setNewAddressId(null);
-                setStreet('');
-                setCity('');
-                setCountry('');
-                setPostalCode('');
-                setAddressNote('');
-            }
-        } else {
+
+        if (!initialData) {
+
             // Reset
             setOrderId(null);
             setSelectedProduct('');
@@ -86,19 +46,70 @@ function OrderModalWithAddressChoice({
 
             setUseExistingAddress(true);
             setSelectedAddressId('');
-            setNewAddressId(null);
             setStreet('');
             setCity('');
             setCountry('');
             setPostalCode('');
             setAddressNote('');
+
+            
+        } else {
+            setOrderId(initialData.id || null);
+            setSelectedProduct(initialData.product?.id || '');
+            setQuantity(initialData.quantity || '');
+            setOrderDeadline(initialData.order_deadline || '');
+            setStatus(initialData.status || 'to_produce');
+            setNote(initialData.note || '');
+            setSelectedWarehouse(initialData.warehouse?.id || '');
+
+            // Adres klienta
+            const addr = initialData.client_address;
+            if (addr && addr.id) {
+                setUseExistingAddress(true);
+                setSelectedAddressId(addr.id);
+                setStreet(addr.street || '');
+                setCity(addr.city || '');
+                setCountry(addr.country || '');
+                setPostalCode(addr.postal_code || '');
+                setAddressNote(addr.note || '');
+            } else {
+                setUseExistingAddress(true);
+                setSelectedAddressId('');
+                setStreet('');
+                setCity('');
+                setCountry('');
+                setPostalCode('');
+                setAddressNote('');
+            }
         }
     }, [initialData]);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+
         
-        const orderData = {
+
+        // Walidacje frontowe
+        if (!selectedProduct) {
+            alert("Musisz wybrać produkt!");
+            return;
+        }
+        if (useExistingAddress && !selectedAddressId) {
+            alert("Musisz wybrać istniejący adres!");
+            return;
+        }
+        if (!useExistingAddress) {
+            // Dodajemy nowy adres – sprawdź, czy user wypełnił pola
+            if (!street || !city || !country) {
+                alert("Wypełnij przynajmniej (ulicę, miasto, kraj) nowego adresu!");
+                return;
+            }
+        }
+
+       
+
+        // Budujemy obiekt zamówienia (bez adresu, bo musimy go stworzyć lub użyć ID)
+        let orderData = {
             id: orderId,
             product_id: selectedProduct,
             quantity,
@@ -108,22 +119,52 @@ function OrderModalWithAddressChoice({
             warehouse_id: selectedWarehouse || null
         };
 
-        if (useExistingAddress && selectedAddressId) {
-            // Używamy istniejącego adresu
-            orderData.client_address_id = selectedAddressId;
-        } else {
-            // Tworzymy / edytujemy adres w tym samym request
-            orderData.client_address = {
-                id: newAddressId, // w razie edycji
-                street,
-                city,
-                country,
-                postal_code: postalCode,
-                note: addressNote
-            };
+        
+
+        try {
+            if (useExistingAddress) {
+                // Używamy istniejącego adresu
+                orderData.client_address_id = selectedAddressId;
+            } else {
+                // 1) Tworzymy nowy adres osobnym requestem
+                const addressPayload = {
+                    street,
+                    city,
+                    country,
+                    postal_code: postalCode,
+                    note: addressNote
+                };
+                const addrRes = await axios.post("http://127.0.0.1:8000/api/addresses/", addressPayload);
+                
+                // Otrzymaliśmy nowy adres, przypinamy do zamówienia
+                const newAddrId = addrRes.data.id;
+                orderData.client_address_id = newAddrId;
+            }
+
+            // 2) Tworzymy / edytujemy zamówienie
+            // Sprawdzamy, czy edycja czy nowy
+            if (orderData.id) {
+                console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>> final orderData:", orderData)
+                await axios.put(`http://127.0.0.1:8000/api/orders/${orderData.id}/`, orderData);
+                alert("Zamówienie zaktualizowane!");
+            } else {
+                console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>> final orderData:", orderData)
+                await axios.post("http://127.0.0.1:8000/api/orders/", orderData);
+                alert("Zamówienie utworzone!");
+            }
+
+            onClose();
+        } catch (error) {
+            console.error("Błąd podczas tworzenia zamówienia / adresu:", error.response?.data || error);
+            let errMsg = "Wystąpił błąd!";
+            if (error.response) {
+                errMsg = JSON.stringify(error.response.data);
+            } else if (error.message) {
+                errMsg = error.message;
+            }
+            alert(errMsg);
         }
         
-        onSave(orderData);
     };
 
     if (!isOpen) return null;
@@ -131,12 +172,9 @@ function OrderModalWithAddressChoice({
     return (
         <div className="modal-overlay">
             <div className="modal-content">
-                <h2>
-                    {orderId ? "Edytuj zamówienie" : "Dodaj nowe zamówienie"}
-                </h2>
+                <h2>{orderId ? "Edytuj zamówienie" : "Dodaj nowe zamówienie"}</h2>
                 <form onSubmit={handleSubmit}>
-
-                    {/* PODSTAWOWE DANE ZAMÓWIENIA */}
+                    {/* Produkt */}
                     <label>Produkt:</label>
                     <select
                         value={selectedProduct}
@@ -195,7 +233,6 @@ function OrderModalWithAddressChoice({
                     <hr/>
                     <h4>Adres klienta</h4>
 
-                    {/* PRZEŁĄCZNIK: istniejący czy nowy adres */}
                     <div>
                         <label>
                             <input
@@ -232,7 +269,6 @@ function OrderModalWithAddressChoice({
                         </>
                     ) : (
                         <>
-                            {/* Pola nowego adresu */}
                             <label>Ulica:</label>
                             <input
                                 type="text"
@@ -270,7 +306,7 @@ function OrderModalWithAddressChoice({
                     )}
 
                     <button type="submit" style={{ marginTop: "1rem" }}>
-                        Zapisz
+                        {orderId ? "Zapisz zmiany" : "Dodaj zamówienie"}
                     </button>
                     <button type="button" onClick={onClose}>Anuluj</button>
                 </form>
