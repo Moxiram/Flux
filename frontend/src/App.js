@@ -9,6 +9,7 @@ import OrderModalWithAddressChoice from './modals/OrderModalWithAddressChoice';
 import DeliveryModal from './modals/DeliveryModal';
 import DemandModal from './modals/DemandModal'; 
 import OrderDeliveryModal from './modals/OrderDeliveryModal';
+import OrdersPage from './pages/orders';
 import './App.css';
 
 function Navbar() {
@@ -29,6 +30,7 @@ function Navbar() {
                 <Link to="/orders">Zamówienia</Link>
                 <Link to="/products">Produkty</Link>
                 <Link to="/warehouses">Magazyny</Link>
+                <Link to="/deliveries">Dostawy</Link>
                 <Link to="/users">Użytkownicy</Link>
                 <Link to="/about">Generator Danych</Link>
             </div>
@@ -563,6 +565,7 @@ function App() {
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/orders" element={<OrdersPage />} />
                 <Route path="/login" element={<div>Zaloguj się</div>} />
             </Routes>
         </Router>

@@ -157,7 +157,7 @@ function GenerateDataPage() {
       // 1) deliveries -> 2) orders -> 3) products -> 4) addresses
       // Pomijamy magazyny dla ułatwienia testów
        
-      // jak trzeba będzie je usunąć to cza dodać je do listy endpointów
+      // jak trzeba będzie usunąć magazyny to cza dodać je do listy endpointów
       let endpoints = ["deliveries", "orders", "products", "addresses"];
 
       for (let ep of endpoints) {
