@@ -10,7 +10,9 @@ from .views import (
     StockViewSet,
     OrderViewSet,
     DemandViewSet,
-    DeliveryViewSet
+    DeliveryViewSet,
+    export_json,
+    import_json
 )
 
 # Tworzymy router
@@ -23,6 +25,7 @@ router.register(r'orders', OrderViewSet, basename='order')
 router.register(r'demands', DemandViewSet, basename='demand')
 router.register(r'deliveries', DeliveryViewSet, basename='delivery')
 
+
 urlpatterns = [
     # Ścieżki zdefiniowane przez router
     path('', include(router.urls)),
@@ -30,4 +33,7 @@ urlpatterns = [
     # Endpointy tokenów (Simple JWT)
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    
+    path('export-json/', export_json, name='export_json'),
+    path('import-json/', import_json, name='import_json'),
 ]

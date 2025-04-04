@@ -32,12 +32,13 @@ class Product(models.Model):
         return f"{self.name}"
     
 class Stock(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="stocks")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="stocks")           # Indeks implicit (automatycznie tworzony przez relacje ForeignKey) - standardowy ForeginKey
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name="stocks")
     quantity = models.CharField(max_length=50, default="0")  # np. "100kg", "50 szt"
 
+# złożony uindeks unikalny - no bo jak mamy np. kartofle to mamy kartofle, jeśli się czymś różnią to wtedy są już 2 produkty czyli indeks zachowany
     class Meta:
-        unique_together = ('product', 'warehouse')  # Jednoznaczny rekord na (produkt, magazyn)
+        unique_together = ('product', 'warehouse') 
 
     def __str__(self):
         return f"{self.product.name} w {self.warehouse.name} - {self.quantity}"
@@ -70,7 +71,7 @@ class Order(models.Model):
     )
     order_date = models.DateTimeField(auto_now_add=True)
     order_deadline = models.DateField(blank=True, null=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='to_produce')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='to_produce', db_index=True,) #dodany indeks B-tree do szybkiego wyszukiwania po statusie
     note = models.TextField(blank=True, null=True)
 
     def __str__(self):

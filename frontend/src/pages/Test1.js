@@ -13,10 +13,13 @@ const DELIVERY_TYPES = ["order", "demand"];
 // magazyny testowe - magazynów nie generujemy
 const TEST_WAREHOUSE_NAMES = ["Magazyn1", "Magazyn2", "Magazyn3"];
 
+
 function GenerateDataPage() {
   const [count, setCount] = useState(10); // domyślna liczba wierszy
   const [isGenerating, setIsGenerating] = useState(false);
   const [log, setLog] = useState(""); // Podgląd postępów
+  // stany do importu/eksportu:
+  const [importFile, setImportFile] = useState(null);
 
   // Losowania
   const randomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -66,7 +69,7 @@ function GenerateDataPage() {
       setLog(prev => prev + "Generowanie produktów...\n");
       for (let i = 0; i < count; i++) {
         let payload = {
-          name: randomItem(PRODUCT_NAMES) + "_" + randomInt(100,999),
+          name: randomItem(PRODUCT_NAMES),
           type: Math.random() > 0.5 ? randomItem(PRODUCT_TYPES) : null,
           note: "Auto-generated product"
         };
@@ -177,14 +180,70 @@ function GenerateDataPage() {
     }
   };
 
+   // ---------------------------------------------
+  // Sekcja: EXPORT JSON
+  // ---------------------------------------------
+  const handleExportJSON = async () => {
+    try {
+      setLog(prev => prev + "Eksport danych do JSON...\n");
+      // Wysyłamy GET do endpointu /api/export-json/
+      const response = await axios.get("http://127.0.0.1:8000/api/export-json/", {
+        responseType: "blob" // ważne, by móc pobrać dane binarne
+      });
+      // Tworzymy link do ściągnięcia pliku
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "backup.json");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setLog(prev => prev + "Eksport zakończony! Plik pobrany.\n");
+    } catch (error) {
+      console.error("Błąd eksportu JSON:", error);
+      setLog(prev => prev + "Błąd eksportu JSON\n");
+    }
+  };
+
+  // ---------------------------------------------
+  // Sekcja: IMPORT JSON
+  // ---------------------------------------------
+  // Gdy user wybiera plik z dysku
+  const handleImportFileChange = (e) => {
+    setImportFile(e.target.files[0]);
+  };
+
+  const handleImportJSON = async () => {
+    if (!importFile) {
+      alert("Wybierz plik .json do importu!");
+      return;
+    }
+    setLog(prev => prev + "Import danych z pliku .json...\n");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", importFile);
+      // POST do /api/import-json/
+      const resp = await axios.post("http://127.0.0.1:8000/api/import-json/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
+      setLog(prev => prev + `Import zakończony sukcesem!\nSerwer odpowiedział: ${resp.data}\n`);
+    } catch (error) {
+      console.error("Błąd importu JSON:", error);
+      setLog(prev => prev + "Błąd importu JSON\n");
+      alert("Błąd importu JSON (sprawdź konsolę).");
+      
+    }
+  };
+
   return (
     <div style={{ padding: "1rem" }}>
       <h2>Generator danych testowych</h2>
-      <p>
-        Ten generator <strong>nie tworzy nowych magazynów</strong> – korzysta ze
-        wstępnie dodanych <em>Magazyn1, Magazyn2, Magazyn3</em>.
-      </p>
+      <p>Ten generator <strong>nie tworzy nowych magazynów</strong> – korzysta ze wstępnie dodanych <em>Magazyn1, Magazyn2, Magazyn3</em>.</p>
 
+      {/* Tutaj Twój panel do generowania i usuwania danych */}
       <div style={{ marginBottom: "1rem" }}>
         <label>Liczba rekordów (addresses, products, orders...): </label>
         <input 
@@ -195,18 +254,38 @@ function GenerateDataPage() {
           style={{ width: "80px", marginLeft: "0.5rem" }}
         />
         <button 
-          onClick={handleGenerate} 
-          disabled={isGenerating} 
+          onClick={() => handleGenerate()}
+          disabled={isGenerating}
           style={{ marginLeft: "1rem" }}
         >
           Generuj dane
         </button>
         <button 
-          onClick={handleDeleteAll} 
+          onClick={() => handleDeleteAll()}
           style={{ marginLeft: "1rem", background: "red", color: "#fff" }}
         >
           Usuń dane testowe
         </button>
+      </div>
+
+      {/* Sekcja import/eksport JSON */}
+      <h3>Eksport / Import JSON</h3>
+      <div style={{ marginBottom: "1rem" }}>
+        <button onClick={handleExportJSON}>
+          Eksport JSON
+        </button>
+
+        <div style={{ marginTop: "1rem" }}>
+          <label>Plik JSON do importu:</label>
+          <input 
+            type="file" 
+            accept=".json"
+            onChange={handleImportFileChange} 
+          />
+          <button onClick={handleImportJSON}>
+            Importuj JSON
+          </button>
+        </div>
       </div>
 
       <pre 

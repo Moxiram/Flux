@@ -143,9 +143,7 @@ function Home() {
         );
     });
 
-    // W nowej strukturze `Product` nie ma `quantity` i `warehouse`.
-    // Dlatego usuwamy logikę filtracji po product.warehouse. 
-    // Zostawiamy jedynie filtr typu, bo jest w 'product.type'.
+    
     const filteredProducts = products.filter(product => {
         return (
             (selectedType === '' || product.type === selectedType)
